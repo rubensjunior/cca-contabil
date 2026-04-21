@@ -297,7 +297,7 @@ const handleSignup = async (): Promise<void> => {
     const userId = `user:${email.value}`
     try {
       await db.get(userId)
-      error.value = 'Este e-mail já está cadastrado.'
+      error.value = 'Este e-mail já está cadastrado. Por favor, faça login para continuar.'
       isLoading.value = false
       return
     } catch (err: unknown) {
@@ -360,9 +360,11 @@ const handleSignup = async (): Promise<void> => {
     })
 
     if (!asaasResult.success) {
-      // Se falhar o Asaas, ainda assim salvamos o user mas exibimos erro para tentar novamente depois ou entrar em contato
+      // Se falhar o Asaas, ainda assim salvamos o user e informamos que ele pode tentar novamente via Login/Checkout
       error.value =
-        'Cadastro realizado, mas houve um erro ao gerar a cobrança: ' + asaasResult.error
+        'Conta criada, mas houve um problema com o pagamento: ' +
+        asaasResult.error +
+        '. Por favor, faça login para tentar novamente.'
       isLoading.value = false
       return
     }

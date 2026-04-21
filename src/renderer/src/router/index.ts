@@ -34,7 +34,7 @@ const routes = [
     path: '/dashboard/sales',
     name: 'InternalSales',
     component: InternalSales,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresPayment: true }
   },
   {
     path: '/checkout',

@@ -218,12 +218,14 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-if="error" class="mt-4 w-full">
-          <p class="mb-4 text-xs text-red-500 font-medium animate-shake text-center">
-            {{ error }}
-          </p>
+        <div v-if="error" class="mt-6 w-full space-y-3">
+          <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
+            <p class="text-xs text-red-400 font-medium text-center leading-relaxed">
+              {{ error }}
+            </p>
+          </div>
           <button
-            class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all"
+            class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all active:scale-[0.98]"
             @click="handleLogout"
           >
             Sair e Tentar Novamente
