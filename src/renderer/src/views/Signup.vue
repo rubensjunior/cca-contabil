@@ -439,7 +439,9 @@ const onCepInput = (e: Event): void => {
 </script>
 
 <template>
-  <div class="h-full bg-white flex selection:bg-blue-500/30 overflow-hidden relative">
+  <div
+    class="min-h-[calc(100vh-48px)] flex-1 bg-white flex selection:bg-[#009ef7]/30 overflow-hidden relative"
+  >
     <!-- Modal de Alerta: CPF Duplicado -->
     <Transition name="fade">
       <div
@@ -473,7 +475,7 @@ const onCepInput = (e: Event): void => {
 
             <div class="w-full space-y-3">
               <button
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+                class="w-full bg-[#009ef7] hover:bg-[#008be0] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-[#009ef7]/20 active:scale-[0.98]"
                 @click="handleNewBusiness"
               >
                 Gerenciar Novo Negócio
@@ -560,7 +562,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="Ex: João Silva"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -573,7 +575,7 @@ const onCepInput = (e: Event): void => {
                     type="email"
                     required
                     placeholder="seu@email.com"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -586,7 +588,7 @@ const onCepInput = (e: Event): void => {
                     type="password"
                     required
                     placeholder="••••••••"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -606,7 +608,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="Ex: Minha Empresa"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -619,7 +621,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="000.000.000-00"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                     @input="onCpfCnpjInput"
                   />
                 </div>
@@ -633,7 +635,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="(00) 00000-0000"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                     @input="onPhoneInput"
                   />
                 </div>
@@ -655,7 +657,7 @@ const onCepInput = (e: Event): void => {
                       type="text"
                       required
                       placeholder="00000-000"
-                      class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                      class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                       @input="onCepInput"
                       @blur="fetchAddressByCep"
                     />
@@ -694,7 +696,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="Rua, Avenida, etc."
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -707,7 +709,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="123"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -719,7 +721,7 @@ const onCepInput = (e: Event): void => {
                     v-model="complement"
                     type="text"
                     placeholder="Opcional"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -732,7 +734,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="Centro"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -745,7 +747,7 @@ const onCepInput = (e: Event): void => {
                     type="text"
                     required
                     placeholder="São Paulo"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
@@ -788,7 +790,7 @@ const onCepInput = (e: Event): void => {
             <button
               v-if="currentStep < 3"
               type="button"
-              class="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 outline-none"
+              class="w-full h-14 bg-[#009ef7] hover:bg-[#008be0] text-white rounded-xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-[#009ef7]/20 outline-none"
               :disabled="isLoading"
               @click="nextStep"
             >
@@ -825,7 +827,7 @@ const onCepInput = (e: Event): void => {
               v-if="currentStep === 3"
               type="submit"
               :disabled="isLoading"
-              class="flex-[2] bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-slate-900/10 flex items-center justify-center gap-3"
+              class="flex-[2] bg-[#009ef7] hover:bg-[#008be0] disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-[#009ef7]/20 flex items-center justify-center gap-3"
             >
               <span v-if="!isLoading">Finalizar Configuração</span>
               <span v-else class="flex items-center gap-2">

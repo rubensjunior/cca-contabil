@@ -210,7 +210,9 @@ const handleLogin = async (): Promise<void> => {
 </script>
 
 <template>
-  <div class="h-full bg-white flex selection:bg-blue-500/30 overflow-hidden">
+  <div
+    class="min-h-[calc(100vh-48px)] flex-1 bg-white flex selection:bg-[#009ef7]/30 overflow-hidden"
+  >
     <!-- Lado Esquerdo: Formulário -->
     <div
       class="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 lg:px-24 bg-white relative overflow-hidden"
@@ -247,7 +249,7 @@ const handleLogin = async (): Promise<void> => {
               type="email"
               required
               placeholder="seu@email.com"
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
             />
           </div>
 
@@ -267,14 +269,14 @@ const handleLogin = async (): Promise<void> => {
               type="password"
               required
               placeholder="••••••••"
-              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
             />
           </div>
 
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full h-14 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-slate-900/10 flex items-center justify-center gap-3 mt-8 outline-none"
+            class="w-full h-14 bg-[#009ef7] hover:bg-[#008be0] disabled:opacity-50 text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-[#009ef7]/20 flex items-center justify-center gap-3 mt-8 outline-none"
           >
             <span v-if="!isLoading" class="flex items-center gap-2">
               Acessar Painel

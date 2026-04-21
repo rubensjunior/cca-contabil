@@ -91,7 +91,7 @@ const features = [
 
           <div class="flex flex-col sm:flex-row gap-4 pt-4">
             <button
-              class="group bg-amber-400 text-slate-950 px-8 py-4 rounded-2xl font-black text-lg transition-all hover:bg-amber-300 active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20"
+              class="group bg-[#009ef7] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:bg-[#008be0] active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-[#009ef7]/20"
               @click="navigateToSignup"
             >
               Criar minha conta
@@ -231,7 +231,7 @@ const features = [
           <p class="text-slate-400 font-medium">Configure sua operação em menos de 10 minutos.</p>
         </div>
         <button
-          class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-10 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 shadow-xl shadow-amber-500/20 flex items-center gap-3"
+          class="bg-[#009ef7] text-white hover:bg-[#008be0] px-10 py-4 rounded-xl font-bold text-lg transition-all active:scale-95 shadow-xl shadow-[#009ef7]/20 flex items-center gap-3"
           @click="navigateToSignup"
         >
           Começar Agora <ArrowRight :size="20" />
@@ -243,14 +243,14 @@ const features = [
     <section id="solucao" class="relative z-10 py-32 px-6 scroll-mt-28">
       <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
         <div class="relative order-2 lg:order-1">
-          <div class="absolute -inset-4 bg-amber-500/10 rounded-[3rem] blur-3xl"></div>
+          <div class="absolute -inset-4 bg-blue-500/10 rounded-[3rem] blur-3xl"></div>
           <div
             class="relative bg-slate-900/50 border border-white/5 p-8 rounded-[2.5rem] space-y-6"
           >
             <div
-              class="flex items-center gap-4 text-amber-400 font-bold uppercase text-xs tracking-widest"
+              class="flex items-center gap-4 text-blue-400 font-bold uppercase text-xs tracking-widest"
             >
-              <span class="w-12 h-px bg-amber-400/50"></span>
+              <span class="w-12 h-px bg-blue-400/50"></span>
               O Custo da Ineficiência
             </div>
             <h3 class="text-3xl font-black text-white">
@@ -272,7 +272,7 @@ const features = [
                 class="flex items-center gap-3 text-slate-300"
               >
                 <div
-                  class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold"
+                  class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-[10px] font-bold"
                 >
                   X
                 </div>
@@ -284,7 +284,7 @@ const features = [
         <div class="space-y-8 order-1 lg:order-2">
           <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight">
             Pare de queimar dinheiro com impostos que
-            <span class="text-amber-400">não são seus.</span>
+            <span class="text-blue-400">não são seus.</span>
           </h2>
           <p class="text-lg text-slate-400 leading-relaxed font-medium">
             O CCA Split foi desenhado para quem cansa de ver a margem de lucro desaparecer em
@@ -293,7 +293,7 @@ const features = [
           </p>
           <div class="pt-6">
             <button
-              class="group bg-amber-400 text-slate-950 hover:bg-amber-300 px-8 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 flex items-center justify-center lg:justify-start gap-3 shadow-xl shadow-amber-500/20"
+              class="group bg-[#009ef7] text-white hover:bg-[#008be0] px-8 py-4 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center lg:justify-start gap-3 shadow-xl shadow-[#009ef7]/20"
               @click="navigateToSignup"
             >
               Quero recuperar minha margem
@@ -361,7 +361,7 @@ const features = [
         </p>
         <div class="pt-4">
           <button
-            class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-10 py-4 rounded-2xl font-black text-xl transition-all active:scale-95 shadow-2xl shadow-amber-500/20 flex items-center justify-center gap-3 mx-auto"
+            class="bg-[#009ef7] text-white hover:bg-[#008be0] px-10 py-4 rounded-xl font-bold text-xl transition-all active:scale-95 shadow-2xl shadow-[#009ef7]/20 flex items-center justify-center gap-3 mx-auto"
             @click="navigateToSignup"
           >
             Quero Segurança Fiscal <Target :size="22" class="text-slate-950" />
@@ -467,7 +467,7 @@ const features = [
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
           <button
-            class="bg-amber-400 text-slate-950 px-10 py-4 rounded-2xl font-black text-xl hover:bg-amber-300 transition-all active:scale-95 shadow-xl shadow-amber-500/20"
+            class="bg-[#009ef7] text-white px-10 py-4 rounded-xl font-bold text-xl hover:bg-[#008be0] transition-all active:scale-95 shadow-xl shadow-[#009ef7]/20"
             @click="navigateToSignup"
           >
             Começar Agora Grátis

@@ -144,7 +144,7 @@ const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
           <!-- Progress Bar -->
           <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100/50">
             <div
-              class="h-full bg-blue-600 transition-all duration-700 ease-in-out shadow-[0_0_10px_rgba(37,99,235,0.5)]"
+              class="h-full bg-[#009ef7] transition-all duration-700 ease-in-out shadow-[0_0_10px_rgba(0,158,247,0.5)]"
               :style="{ width: `${progress}%` }"
             ></div>
           </div>
@@ -219,7 +219,7 @@ const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
                           v-model="asaasApiKey"
                           type="password"
                           placeholder="$asaas_live_..."
-                          class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-8 focus:ring-blue-500/5 transition-all placeholder:text-slate-300 font-mono text-sm"
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400 font-mono text-sm"
                         />
                         <div
                           class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"
@@ -257,7 +257,7 @@ const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
                       class="flex flex-col items-center p-4 rounded-3xl border-2 transition-all text-center group"
                       :class="[
                         businessSegment === segment.id
-                          ? 'border-blue-600 bg-blue-50 shadow-lg shadow-blue-600/10'
+                          ? 'border-[#009ef7] bg-blue-50 shadow-lg shadow-[#009ef7]/10'
                           : 'border-slate-100 hover:border-slate-300 bg-white'
                       ]"
                       @click="businessSegment = segment.id"
@@ -286,7 +286,7 @@ const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
                     class="h-1.5 rounded-full transition-all duration-500"
                     :class="[
                       currentStep === index
-                        ? 'w-10 bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)]'
+                        ? 'w-10 bg-[#009ef7] shadow-[0_0_8px_rgba(0,158,247,0.4)]'
                         : 'w-1.5 bg-slate-200'
                     ]"
                   ></div>
@@ -301,7 +301,7 @@ const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
                     <ChevronLeft :size="24" />
                   </button>
                   <button
-                    class="bg-slate-900 hover:bg-blue-700 text-white px-10 py-5 rounded-[1.5rem] font-black flex items-center gap-3 transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50"
+                    class="bg-[#009ef7] hover:bg-[#008be0] text-white px-10 py-5 rounded-xl font-bold flex items-center gap-3 transition-all shadow-lg shadow-[#009ef7]/20 active:scale-95 disabled:opacity-50"
                     :disabled="isValidating"
                     @click="next"
                   >
