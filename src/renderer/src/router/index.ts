@@ -3,13 +3,16 @@ import Login from '../views/Login.vue'
 import Signup from '../views/Signup.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Checkout from '../views/Checkout.vue'
+import LandingPage from '../views/LandingPage.vue'
+import InternalSales from '../views/InternalSales.vue'
 
 import { routerState } from './routerState'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    name: 'LandingPage',
+    component: LandingPage
   },
   {
     path: '/login',
@@ -26,6 +29,12 @@ const routes = [
     name: 'Dashboard',
     component: Dashboard,
     meta: { requiresAuth: true, requiresPayment: true }
+  },
+  {
+    path: '/dashboard/sales',
+    name: 'InternalSales',
+    component: InternalSales,
+    meta: { requiresAuth: true }
   },
   {
     path: '/checkout',

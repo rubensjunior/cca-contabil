@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import db, { User, AppConfig, initUserSession, getWorkDB } from '../database/pouch'
-import { TrendingUp, CheckCircle2, Users, ArrowRight } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
 import { PhShieldCheckered, PhChartLineUp, PhCoins } from '@phosphor-icons/vue'
 import {
   Chart as ChartJS,
@@ -500,11 +500,14 @@ const onCepInput = (e: Event): void => {
       <div class="w-full max-w-xl flex flex-col items-center animate-fade-in-up">
         <!-- Logo Typography Corporate -->
         <div class="mb-4 text-center flex flex-col items-center">
-          <div class="inline-flex items-center justify-center mb-2">
+          <router-link
+            to="/"
+            class="inline-flex items-center justify-center mb-2 transition-opacity hover:opacity-80"
+          >
             <h1 class="text-3xl font-bold tracking-tight text-slate-900">
               CCA<span class="text-blue-600">.</span> Split
             </h1>
-          </div>
+          </router-link>
           <p class="text-slate-500 text-sm">Crie sua conta profissional hoje</p>
         </div>
 
@@ -870,7 +873,7 @@ const onCepInput = (e: Event): void => {
         </p>
         <div class="flex items-center gap-8 opacity-80 hover:opacity-100 transition-opacity">
           <div class="flex flex-col items-center">
-            <span class="text-xs font-black text-slate-900 tracking-tight">HUB DE NEGÓCIOS</span>
+            <span class="text-xs font-black text-slate-900 tracking-tight">CCA CONTABILIDADE</span>
           </div>
           <div class="w-px h-4 bg-slate-200"></div>
           <div class="flex flex-col items-center">
@@ -899,11 +902,6 @@ const onCepInput = (e: Event): void => {
           <transition-group name="slide-fade" mode="out-in">
             <div :key="currentSlide" class="space-y-8">
               <div class="space-y-4">
-                <div
-                  class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20"
-                >
-                  <component :is="slides[currentSlide].icon" :size="32" stroke-width="1.5" />
-                </div>
                 <h3 class="text-3xl xl:text-4xl font-bold text-white leading-tight tracking-tight">
                   {{ slides[currentSlide].title }} <br />
                   <span class="text-blue-400 font-black italic">{{
@@ -924,12 +922,7 @@ const onCepInput = (e: Event): void => {
                     <Bar :data="economyChartData" :options="economyChartOptions" />
                   </div>
                   <div class="mt-6 pt-6 border-t border-slate-700/50 flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400"
-                    >
-                      <TrendingUp :size="18" />
-                    </div>
-                    <p class="text-xs text-slate-400 leading-relaxed">
+                    <p class="text-[10px] text-slate-400 leading-relaxed font-bold">
                       Economia média de
                       <span class="text-emerald-400 font-bold">15% a 35%</span> na carga tributária
                       total da operação.
@@ -942,11 +935,6 @@ const onCepInput = (e: Event): void => {
                 <div
                   class="bg-blue-600/5 border border-blue-500/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden"
                 >
-                  <div
-                    class="absolute top-0 right-0 p-4 opacity-10 text-blue-400 rotate-12 transform scale-150"
-                  >
-                    <component :is="slides[currentSlide].icon" :size="120" weight="thin" />
-                  </div>
                   <div class="flex items-center justify-between mb-8">
                     <div class="space-y-1">
                       <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
@@ -979,11 +967,7 @@ const onCepInput = (e: Event): void => {
                 <div
                   class="group flex items-start gap-5 p-4 rounded-2xl bg-slate-800/20 border border-transparent hover:border-blue-500/20 transition-all"
                 >
-                  <div
-                    class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"
-                  >
-                    <CheckCircle2 :size="20" />
-                  </div>
+                  <div class="w-1.5 h-12 bg-blue-500/20 rounded-full shrink-0"></div>
                   <div class="space-y-1">
                     <p class="text-white font-bold">Blindagem Fiscal</p>
                     <p class="text-sm text-slate-300 leading-relaxed">
@@ -995,11 +979,7 @@ const onCepInput = (e: Event): void => {
                 <div
                   class="group flex items-start gap-5 p-4 rounded-2xl bg-slate-800/20 border border-transparent hover:border-blue-500/20 transition-all"
                 >
-                  <div
-                    class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"
-                  >
-                    <Users :size="20" />
-                  </div>
+                  <div class="w-1.5 h-12 bg-blue-500/20 rounded-full shrink-0"></div>
                   <div class="space-y-1">
                     <p class="text-white font-bold">Gestão de Talentos</p>
                     <p class="text-sm text-slate-300 leading-relaxed">

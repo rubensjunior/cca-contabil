@@ -2,6 +2,15 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
+import {
+  BarChart3,
+  Users2,
+  Receipt,
+  ArrowUpRight,
+  Plus,
+  Compass,
+  ArrowUpCircle
+} from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -79,29 +88,36 @@ const handleCancelSubscription = async (): Promise<void> => {
 
       <nav class="flex-1 space-y-1">
         <div
-          class="p-3 bg-blue-50 text-blue-700 rounded-xl font-bold border border-blue-100 flex items-center gap-3 transition-all"
+          class="p-3 bg-blue-50 text-blue-700 rounded-xl font-bold border border-blue-100 flex items-center gap-3 transition-all cursor-default"
         >
-          <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+          <Compass :size="18" />
           Panorama Geral
         </div>
         <div
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
         >
-          <div class="w-1.5 h-6 bg-transparent"></div>
+          <Users2 :size="18" />
           Clientes
         </div>
         <div
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
         >
-          <div class="w-1.5 h-6 bg-transparent"></div>
+          <Receipt :size="18" />
           Time de Especialistas
         </div>
         <div
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
         >
-          <div class="w-1.5 h-6 bg-transparent"></div>
+          <BarChart3 :size="18" />
           Gestão de Repasses
         </div>
+        <router-link
+          to="/dashboard/sales"
+          class="p-3 text-blue-600 hover:bg-blue-50 bg-white border border-transparent hover:border-blue-100 rounded-xl transition-all flex items-center gap-3 group"
+        >
+          <ArrowUpCircle :size="18" class="group-hover:rotate-12 transition-transform" />
+          <span class="font-bold">Upgrade & Planos</span>
+        </router-link>
       </nav>
 
       <div class="pt-6 border-t border-slate-100">
@@ -122,28 +138,16 @@ const handleCancelSubscription = async (): Promise<void> => {
           </div>
         </div>
         <button
-          class="w-full text-left p-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all flex items-center gap-2 font-medium"
+          class="w-full text-left p-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all flex items-center justify-center font-bold text-xs uppercase tracking-widest border border-transparent hover:border-red-100"
           @click="handleLogout"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
           Sair do Sistema
         </button>
         <div
           class="mt-6 text-[9px] uppercase tracking-wider text-slate-400 text-center font-medium leading-relaxed"
         >
           Powered by<br />
-          <span class="text-slate-500 font-bold">HUB DE NEGÓCIOS e RKS Tech Solution</span>
+          <span class="text-slate-500 font-bold">CCA Contabilidade e RKS Tech Solution</span>
         </div>
       </div>
     </aside>
@@ -212,33 +216,54 @@ const handleCancelSubscription = async (): Promise<void> => {
       <div class="grid grid-cols-3 gap-6">
         <!-- Stats Cards -->
         <div
-          class="bg-white border border-slate-200 p-8 rounded-3xl group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-md"
+          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
         >
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">
+          <div
+            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-blue-50 transition-colors"
+          >
+            <ArrowUpRight :size="48" />
+          </div>
+          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
             Total em Cobranças
           </p>
-          <p class="text-3xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+          <p
+            class="text-4xl font-black text-slate-900 group-hover:text-blue-600 transition-colors relative z-10"
+          >
             R$ 0,00
           </p>
         </div>
+
         <div
-          class="bg-white border border-slate-200 p-8 rounded-3xl group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-md"
+          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
         >
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">
+          <div
+            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-blue-50 transition-colors"
+          >
+            <Receipt :size="48" />
+          </div>
+          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
             Aguardando Pagamento
           </p>
-          <p class="text-3xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+          <p
+            class="text-4xl font-black text-slate-900 group-hover:text-blue-600 transition-colors relative z-10"
+          >
             0
           </p>
         </div>
+
         <div
-          class="bg-white border border-slate-200 p-8 rounded-3xl group hover:border-emerald-500/30 transition-all shadow-sm hover:shadow-md"
+          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-emerald-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
         >
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">
+          <div
+            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-emerald-50 transition-colors"
+          >
+            <BarChart3 :size="48" />
+          </div>
+          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
             Próximos Splits
           </p>
           <p
-            class="text-3xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors"
+            class="text-4xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors relative z-10"
           >
             R$ 0,00
           </p>
@@ -248,22 +273,9 @@ const handleCancelSubscription = async (): Promise<void> => {
       <!-- Empty State -->
       <div class="mt-10 bg-white border border-slate-200 rounded-3xl p-20 text-center shadow-sm">
         <div
-          class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-slate-400"
+          class="w-20 h-20 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-8 text-slate-300 group-hover:rotate-6 transition-transform"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-8 w-8"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
+          <Plus :size="32" />
         </div>
         <h3 class="text-xl font-bold text-slate-900 mb-2">Pronto para escalar seu lucro?</h3>
         <p class="text-slate-500 max-w-sm mx-auto mb-8">
