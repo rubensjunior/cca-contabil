@@ -8,6 +8,20 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
     />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden !important;
+      }
+      /* Remove scrollbar padrão do elemento raiz no Electron */
+      html::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
   </head>
 
   <body>

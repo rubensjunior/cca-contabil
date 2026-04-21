@@ -24,6 +24,33 @@ import TitleBar from './components/TitleBar.vue'
 </template>
 
 <style>
+/* Reset global agressivo para evitar scroll duplo */
+html,
+body,
+#app {
+  height: 100vh !important;
+  width: 100vw !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: fixed; /* Previne qualquer tentativa de scroll do sistema */
+}
+
+/* Remove scrollbar nativa apenas dos elementos raiz */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.app-container {
+  height: 100vh !important;
+  width: 100vw !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  background: #ffffff;
+}
+
 /* Global styles and transitions */
 .fade-enter-active,
 .fade-leave-active {
@@ -35,21 +62,31 @@ import TitleBar from './components/TitleBar.vue'
   opacity: 0;
 }
 
-.app-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #ffffff;
-}
-
 .main-content {
   flex: 1;
   position: relative;
-  overflow: hidden; /* Changed from overflow-y: auto to prevent double scrolls */
+  overflow-y: auto !important;
   display: flex;
   flex-direction: column;
-  padding-top: 48px; /* Compensation for fixed TitleBar */
+}
+
+/* Scrollbar styling - EXCLUSIVO para o conteúdo principal */
+.main-content::-webkit-scrollbar {
+  display: block; /* Garante que apareça aqui */
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
 
 /* Loading Bar Styles - Adjust top to be relative to main-content */
@@ -91,10 +128,5 @@ import TitleBar from './components/TitleBar.vue'
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   opacity: 0;
-}
-
-/* Ensure full height */
-#app {
-  height: 100vh;
 }
 </style>

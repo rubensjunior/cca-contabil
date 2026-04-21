@@ -2,13 +2,14 @@
 import { useRouter } from 'vue-router'
 import {
   ArrowRight,
-  ChevronRight,
   ShieldCheck,
   Zap,
   BarChart3,
   Users2,
   Globe2,
-  Lock
+  Lock,
+  CreditCard,
+  Target
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -23,25 +24,27 @@ const navigateToSignup = (): void => {
 const features = [
   {
     icon: ShieldCheck,
-    title: 'Segurança Absoluta',
-    description: 'Blindagem jurídica e fiscal desenhada para proteger sua rede de especialistas.'
+    title: 'Blindagem Fiscal',
+    description:
+      'Garantia de que você só paga imposto sobre a sua parte, em total conformidade com a lei.'
   },
   {
     icon: Zap,
-    title: 'Split Automático',
-    description: 'Divisão de honorários na fonte, eliminando a bitributação e erros manuais.'
+    title: 'Divisão Inteligente',
+    description:
+      'Repasse automatizado na fonte. Rapidez para o parceiro e segurança absoluta para a empresa.'
   },
   {
     icon: BarChart3,
-    title: 'Dashboards em Tempo Real',
-    description: 'Controle absoluto do seu Hub de negócios com métricas precisas e atualizadas.'
+    title: 'Gestão de Cobranças',
+    description:
+      'Organize faturas, recebimentos e repasses em um único dashboard transparente e centralizado.'
   }
 ]
 </script>
-
 <template>
   <div
-    class="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30 selection:text-white font-sans overflow-x-hidden"
+    class="min-h-full w-full bg-slate-950 text-slate-200 selection:bg-blue-500/30 selection:text-white font-sans overflow-x-hidden"
   >
     <!-- Efeitos de Background -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -56,73 +59,39 @@ const features = [
       ></div>
     </div>
 
-    <!-- Header / Navbar -->
-    <header class="relative z-50 border-b border-white/5 backdrop-blur-md sticky top-0">
-      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-bold tracking-tight text-white">
-            CCA<span class="text-blue-500">.</span> Split
-          </h1>
-        </div>
-
-        <nav class="hidden md:flex items-center gap-8">
-          <a href="#" class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
-            >Funcionalidades</a
-          >
-          <a href="#" class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
-            >Segurança</a
-          >
-          <a href="#" class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
-            >Sobre</a
-          >
-        </nav>
-
-        <div class="flex items-center gap-4">
-          <button
-            class="text-sm font-bold text-white hover:text-blue-400 transition-colors px-4"
-            @click="navigateToLogin"
-          >
-            Entrar
-          </button>
-          <button
-            class="hidden sm:flex bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-lg shadow-blue-600/20 items-center gap-2"
-            @click="navigateToSignup"
-          >
-            Começar Agora
-            <ChevronRight :size="16" />
-          </button>
-        </div>
-      </div>
-    </header>
-
     <!-- Hero Section -->
-    <section class="relative z-10 pt-24 pb-32 px-6 overflow-hidden">
+    <section class="relative z-10 pt-16 pb-32 px-6 overflow-hidden">
       <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
         <div class="space-y-8 animate-fade-in-left">
+          <div class="text-3xl font-black text-white mb-12">
+            CCA<span class="text-blue-500">.</span> Split
+          </div>
+
           <div
             class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase mb-4"
           >
             <Zap :size="14" />
-            Nova Geração de Split Contábil
+            Nova Geração de Inteligência Fiscal
           </div>
 
           <h2 class="text-5xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight">
-            Escale seu Hub <br />
+            Escale seu negócio <br />
             <span
               class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 italic"
             >
-              sem bitributação.
+              sem impostos em excesso.
             </span>
           </h2>
 
           <p class="text-lg text-slate-400 leading-relaxed max-w-xl font-medium">
-            A plataforma definitiva para gestores que buscam eficiência máxima no repasse de
-            honorários e segurança jurídica absoluta na gestão de especialistas.
+            A plataforma que organiza cobrança, automatiza e blinda juridicamente o repasse de
+            pagamentos para sua rede de especialistas. Elimine a bitributação e foque no seu
+            crescimento.
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 pt-4">
             <button
-              class="group bg-white text-slate-950 px-8 py-4 rounded-2xl font-black text-lg transition-all hover:bg-blue-50 active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-white/5"
+              class="group bg-amber-400 text-slate-950 px-8 py-4 rounded-2xl font-black text-lg transition-all hover:bg-amber-300 active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20"
               @click="navigateToSignup"
             >
               Criar minha conta
@@ -159,7 +128,7 @@ const features = [
               <div class="flex justify-between items-center">
                 <div class="space-y-1">
                   <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                    Performance do Hub
+                    Performance da Operação
                   </p>
                   <p class="text-3xl font-black text-white">R$ 54.290,00</p>
                 </div>
@@ -220,13 +189,17 @@ const features = [
     </section>
 
     <!-- Features Section -->
-    <section class="relative z-10 py-32 bg-white/5 backdrop-blur-sm border-y border-white/5">
+    <section
+      id="features"
+      class="relative z-10 py-32 bg-white/5 backdrop-blur-sm border-y border-white/5 scroll-mt-28"
+    >
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center space-y-4 mb-20">
           <h2 class="text-4xl font-black text-white italic">Diferenciais Estratégicos</h2>
           <div class="w-20 h-1 bg-blue-500 mx-auto rounded-full"></div>
           <p class="text-slate-400 max-w-2xl mx-auto font-medium">
-            Controle total da sua operação com ferramentas pensadas para o crescimento contínuo.
+            Controle total da sua operação com ferramentas pensadas para o crescimento sustentável e
+            seguro.
           </p>
         </div>
 
@@ -245,6 +218,227 @@ const features = [
             <p class="text-slate-400 leading-relaxed text-sm font-medium">
               {{ feature.description }}
             </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mid-Page CTA 1 -->
+    <section class="relative z-10 py-16 bg-blue-600/5 px-6 border-b border-white/5">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="space-y-2">
+          <h3 class="text-2xl font-black text-white">Pronto para automatizar seus repasses?</h3>
+          <p class="text-slate-400 font-medium">Configure sua operação em menos de 10 minutos.</p>
+        </div>
+        <button
+          class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-10 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 shadow-xl shadow-amber-500/20 flex items-center gap-3"
+          @click="navigateToSignup"
+        >
+          Começar Agora <ArrowRight :size="20" />
+        </button>
+      </div>
+    </section>
+
+    <!-- Seção: O Problema -->
+    <section id="solucao" class="relative z-10 py-32 px-6 scroll-mt-28">
+      <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+        <div class="relative order-2 lg:order-1">
+          <div class="absolute -inset-4 bg-red-500/10 rounded-[3rem] blur-3xl"></div>
+          <div
+            class="relative bg-slate-900/50 border border-white/5 p-8 rounded-[2.5rem] space-y-6"
+          >
+            <div
+              class="flex items-center gap-4 text-red-400 font-bold uppercase text-xs tracking-widest"
+            >
+              <span class="w-12 h-px bg-red-400/50"></span>
+              O Custo da Ineficiência
+            </div>
+            <h3 class="text-3xl font-black text-white">
+              Você está perdendo até 27,5% da sua margem agora mesmo?
+            </h3>
+            <p class="text-slate-400 leading-relaxed font-medium">
+              Sem um sistema de split automatizado, você acaba pagando impostos sobre o faturamento
+              bruto, incluindo a parte que pertence ao seu parceiro. Essa bitributação desnecessária
+              é o maior ralo de lucro em redes de especialistas.
+            </p>
+            <div class="space-y-4 pt-4">
+              <div
+                v-for="(item, idx) in [
+                  'Bitributação desnecessária',
+                  'Risco de vínculo trabalhista',
+                  'Caos em planilhas financeiras'
+                ]"
+                :key="idx"
+                class="flex items-center gap-3 text-slate-300"
+              >
+                <div
+                  class="w-5 h-5 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-[10px] font-bold"
+                >
+                  X
+                </div>
+                <span class="text-sm font-medium">{{ item }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-8 order-1 lg:order-2">
+          <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight">
+            Pare de queimar dinheiro com impostos que
+            <span class="text-red-400">não são seus.</span>
+          </h2>
+          <p class="text-lg text-slate-400 leading-relaxed font-medium">
+            O CCA Split foi desenhado para quem cansa de ver a margem de lucro desaparecer em
+            tributos em duplicidade. Nossa inteligência financeira separa o que é seu e o que é do
+            parceiro na origem, garantindo que o imposto incida apenas sobre o valor correto.
+          </p>
+          <div class="pt-6">
+            <button
+              class="group bg-amber-400 text-slate-950 hover:bg-amber-300 px-8 py-4 rounded-2xl font-black text-lg transition-all active:scale-95 flex items-center justify-center lg:justify-start gap-3 shadow-xl shadow-amber-500/20"
+              @click="navigateToSignup"
+            >
+              Quero recuperar minha margem
+              <ArrowRight class="group-hover:translate-x-1 transition-transform" :size="20" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção: Como Funciona -->
+    <section id="como-funciona" class="relative z-10 py-32 bg-slate-900/30 scroll-mt-28">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-20 space-y-4">
+          <h2 class="text-4xl font-black text-white">
+            Simples para você, <span class="text-blue-500">justo</span> para todos.
+          </h2>
+          <p class="text-slate-400 font-medium">
+            A jornada da cobrança ao lucro, em 4 passos automatizados.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-8">
+          <div
+            v-for="(step, idx) in [
+              { t: 'Cadastro', d: 'Cadastre sua empresa e seus parceiros em minutos.' },
+              { t: 'Cobrança', d: 'Emita cobranças integradas para seus clientes.' },
+              { t: 'Divisão', d: 'O sistema separa as partes automaticamente no recebimento.' },
+              { t: 'Repasse', d: 'Dinheiro direto na conta de quem trabalhou.' }
+            ]"
+            :key="idx"
+            class="relative group"
+          >
+            <div
+              class="mb-6 text-7xl font-black text-white/5 group-hover:text-blue-500/10 transition-colors"
+            >
+              {{ idx + 1 }}
+            </div>
+            <h4 class="text-xl font-bold text-white mb-2">{{ step.t }}</h4>
+            <p class="text-slate-400 text-sm leading-relaxed">{{ step.d }}</p>
+            <div
+              v-if="idx < 3"
+              class="hidden md:block absolute top-8 -right-4 w-8 h-px bg-white/10"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mid-Page CTA 2 -->
+    <section class="relative z-10 py-20 px-6">
+      <div class="max-w-4xl mx-auto text-center space-y-8">
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold tracking-widest uppercase"
+        >
+          <CreditCard :size="12" /> Checkout Transparente
+        </div>
+        <h2 class="text-3xl lg:text-4xl font-black text-white leading-tight">
+          Tudo o que você precisa para crescer <br />
+          <span class="text-blue-500">sem bitributação.</span>
+        </h2>
+        <p class="text-slate-400 text-lg font-medium max-w-2xl mx-auto">
+          Nossa tecnologia de split cuida de toda a complexidade fiscal enquanto você foca no que
+          realmente importa: suas vendas.
+        </p>
+        <div class="pt-4">
+          <button
+            class="bg-amber-400 text-slate-950 hover:bg-amber-300 px-10 py-4 rounded-2xl font-black text-xl transition-all active:scale-95 shadow-2xl shadow-amber-500/20 flex items-center justify-center gap-3 mx-auto"
+            @click="navigateToSignup"
+          >
+            Quero Segurança Fiscal <Target :size="22" class="text-slate-950" />
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção: Segurança & FAQ -->
+    <section id="faq" class="relative z-10 py-32 px-6 scroll-mt-28">
+      <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20">
+        <div class="space-y-8">
+          <div
+            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-widest uppercase"
+          >
+            <Lock :size="12" /> Blindagem Total
+          </div>
+          <h2 class="text-4xl font-black text-white">Segurança jurídica que escala com você.</h2>
+          <p class="text-slate-400 font-medium leading-relaxed">
+            Não é apenas sobre tecnologia, é sobre conformidade. O CCA Split utiliza contratos de
+            parceria e integração com gateways de pagamento (Asaas) para garantir que toda
+            movimentação financeira tenha lastro legal indiscutível.
+          </p>
+          <div class="grid sm:grid-cols-2 gap-6">
+            <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+              <ShieldCheck class="text-emerald-400" :size="24" />
+              <h5 class="text-white font-bold">Respaldo Fiscal</h5>
+              <p class="text-xs text-slate-500">
+                Emissão de notas fiscais configurada para o modelo de split.
+              </p>
+            </div>
+            <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+              <Users2 class="text-blue-400" :size="24" />
+              <h5 class="text-white font-bold">Gestão Manual Zero</h5>
+              <p class="text-xs text-slate-500">Esqueça as conferências em extratos bancários.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <h3 class="text-2xl font-bold text-white mb-8 italic">Dúvidas Frequentes</h3>
+          <div
+            v-for="(faq, idx) in [
+              {
+                q: 'O modelo de Split é legal?',
+                a: 'Sim. É um modelo previsto e utilizado por grandes plataformas (Uber, iFood) para evitar a bitributação.'
+              },
+              {
+                q: 'Preciso de um CNPJ para meus parceiros?',
+                a: 'O ideal é que seus especialistas sejam PJ para maximizar a economia fiscal, mas o sistema suporta diversas configurações.'
+              },
+              {
+                q: 'Como é feito o repasse?',
+                a: 'O repasse é automatizado via gateway de pagamento, caindo diretamente na conta cadastrada do parceiro.'
+              },
+              {
+                q: 'Posso definir taxas diferenciadas?',
+                a: 'Com certeza. Você tem controle total sobre as regras de divisão de cada serviço ou parceiro.'
+              }
+            ]"
+            :key="idx"
+            class="p-6 rounded-2xl bg-slate-900 border border-white/5 hover:border-white/10 transition-colors"
+          >
+            <h4 class="text-white font-bold mb-2">{{ faq.q }}</h4>
+            <p class="text-sm text-slate-400 leading-relaxed">{{ faq.a }}</p>
+          </div>
+
+          <div class="pt-6 text-center lg:text-left">
+            <p class="text-slate-400 mb-4 font-medium">
+              Ainda tem dúvidas sobre o modelo de Split?
+            </p>
+            <button
+              class="text-blue-400 font-bold flex items-center gap-2 hover:gap-3 transition-all mx-auto lg:mx-0"
+              @click="navigateToSignup"
+            >
+              Falar com um consultor <ArrowRight :size="18" />
+            </button>
           </div>
         </div>
       </div>
@@ -273,14 +467,14 @@ const features = [
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
           <button
-            class="bg-white text-blue-600 px-10 py-4 rounded-2xl font-black text-xl hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
+            class="bg-amber-400 text-slate-950 px-10 py-4 rounded-2xl font-black text-xl hover:bg-amber-300 transition-all active:scale-95 shadow-xl shadow-amber-500/20"
             @click="navigateToSignup"
           >
             Começar Agora Grátis
           </button>
           <button
-            class="bg-blue-700/50 backdrop-blur-md text-white border border-white/20 px-10 py-4 rounded-2xl font-black text-xl hover:bg-blue-700/70 transition-all active:scale-95"
-            @click="navigateToLogin"
+            class="bg-white/10 backdrop-blur-md text-white border border-white/20 px-10 py-4 rounded-2xl font-black text-xl hover:bg-white/20 transition-all active:scale-95"
+            @click="navigateToSignup"
           >
             Falar com Especialista
           </button>
@@ -315,6 +509,10 @@ const features = [
     </footer>
   </div>
 </template>
+
+<style>
+/* Scroll behavior customizado via JS na função scrollToSection */
+</style>
 
 <style scoped>
 @keyframes pulse-slow {
@@ -393,23 +591,5 @@ const features = [
 
 .animate-bounce-slow {
   animation: float 4s ease-in-out infinite;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #020617;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
 }
 </style>

@@ -64,7 +64,7 @@ const handleClose = (): void => {
 
 <style scoped>
 .title-bar {
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;

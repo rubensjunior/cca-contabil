@@ -47,7 +47,12 @@ ul {
 }
 
 body {
-  min-height: 100vh;
+  height: 100vh !important;
+  width: 100vw !important;
+  overflow: hidden !important;
+  margin: 0;
+  padding: 0;
+  position: fixed;
   color: var(--color-text);
   background: var(--color-background);
   line-height: 1.6;
