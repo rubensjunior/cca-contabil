@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { AppConfig } from '../database/pouch'
+import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
 
 const router = useRouter()
 
@@ -20,8 +20,8 @@ const cancelError = ref('')
 const user = ref<UserSession | null>(null)
 const config = ref<AppConfig | null>(null)
 
-const handleLogout = (): void => {
-  localStorage.removeItem('cca_session')
+const handleLogout = async (): Promise<void> => {
+  await closeSession()
   router.push('/login')
 }
 
@@ -32,10 +32,11 @@ onMounted(async () => {
   }
 
   try {
-    const doc = await db.get<AppConfig>('config:main')
+    const workDB = getWorkDB()
+    const doc = await workDB.get<AppConfig>('config:main')
     config.value = doc
   } catch {
-    console.warn('Config não encontrada')
+    console.warn('Config não encontrada no banco de trabalho')
   }
 })
 

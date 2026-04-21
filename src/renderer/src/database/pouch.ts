@@ -18,6 +18,7 @@ export interface User extends BaseDoc {
   passwordHash: string
   role: 'admin' | 'accountant' | 'clerk'
   status: 'active' | 'inactive'
+  tenantId: string // ID imutável para vincular ao banco de dados do escritório
   asaasCustomerId?: string
   asaasSubscriptionId?: string
   asaasInvoiceUrl?: string
@@ -67,20 +68,77 @@ export interface AppConfig extends BaseDoc {
   }
 }
 
-// Instância do Banco de Dados
-const db = new PouchDB('cca_contabil_db')
+// Bancos de Dados
+const authDB = new PouchDB('cca_auth_db')
+let workDB: PouchDB.Database | null = null
 
-// Inicialização (Vazia para banco limpo)
+// Inicialização e Gerenciamento de Sessão
+export const getAuthDB = (): PouchDB.Database => authDB
+
+export const getWorkDB = (): PouchDB.Database => {
+  if (!workDB) {
+    // Tentar restaurar da sessão se existir
+    const session = localStorage.getItem('cca_session')
+    if (session) {
+      const { tenantId } = JSON.parse(session)
+      if (tenantId) {
+        workDB = new PouchDB(`cca_work_db_${tenantId}`)
+        return workDB
+      }
+    }
+    throw new Error('Sessão não inicializada. Por favor, faça login novamente.')
+  }
+  return workDB
+}
+
+/**
+ * Inicializa a sessão do usuário e abre o banco de dados de trabalho específico.
+ */
+export const initUserSession = (tenantId: string): void => {
+  if (workDB) {
+    console.log('Trocando banco de dados de trabalho...')
+  }
+  workDB = new PouchDB(`cca_work_db_${tenantId}`)
+  console.log(`Banco de dados de trabalho inicializado: cca_work_db_${tenantId}`)
+}
+
+/**
+ * Limpa a sessão e desvincula o banco de dados atual.
+ */
+export const closeSession = async (): Promise<void> => {
+  if (workDB) {
+    workDB = null
+  }
+  localStorage.removeItem('cca_session')
+}
+
+// Inicialização Global
 export const initializeDB = async (): Promise<void> => {
-  // Reset único do banco de dados solicitado pelo usuário
-  if (!localStorage.getItem('db_reset_done')) {
-    console.log('Zerando banco de dados para novos testes...')
-    await db.destroy()
-    localStorage.setItem('db_reset_done', 'true')
+  // Reset único solicitado anteriormente (agora aplicado ao authDB se necessário)
+  if (!localStorage.getItem('db_reset_v2_done')) {
+    console.log('Limpando sistemas para nova arquitetura de isolamento...')
+    // Em Electron + PouchDB local, não temos allDbs facilmente sem plugins específicos,
+    // então vamos destruir sistematicamente o que conhecemos.
+    await authDB.destroy()
+    await new PouchDB('cca_contabil_db').destroy()
+
+    localStorage.setItem('db_reset_v2_done', 'true')
     window.location.reload()
     return
   }
-  console.log('Database initialized (clean)')
+
+  // Tentar reconectar sessão existente
+  const session = localStorage.getItem('cca_session')
+  if (session) {
+    try {
+      const parsedSession = JSON.parse(session)
+      if (parsedSession.tenantId) {
+        initUserSession(parsedSession.tenantId)
+      }
+    } catch (e) {
+      console.error('Erro ao restaurar sessão:', e)
+    }
+  }
 }
 
 // Helper para gerar IDs consistentes
@@ -88,4 +146,5 @@ export const generateId = (type: DocType, suffix?: string): string => {
   return `${type}:${suffix || Date.now()}`
 }
 
-export default db
+// Exportação padrão agora é o AuthDB por segurança de retrocompatibilidade no Login/Signup
+export default authDB

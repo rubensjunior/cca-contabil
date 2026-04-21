@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { initializeDB, User } from '../database/pouch'
+import db, { initializeDB, User, initUserSession } from '../database/pouch'
 
 const router = useRouter()
 const email = ref('')
@@ -26,11 +26,15 @@ const handleLogin = async (): Promise<void> => {
         return
       }
 
+      // Inicializar banco de dados do Tenant
+      initUserSession(user.tenantId)
+
       // Simular sessão local
       localStorage.setItem(
         'cca_session',
         JSON.stringify({
           id: user._id,
+          tenantId: user.tenantId,
           name: user.name,
           role: user.role,
           email: user.email

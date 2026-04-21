@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, AppConfig } from '../database/pouch'
+import db, { User, AppConfig, initUserSession, getWorkDB } from '../database/pouch'
 
 const router = useRouter()
 
@@ -127,7 +127,10 @@ const handleSignup = async (): Promise<void> => {
       if ((err as { status?: number }).status !== 404) throw err
     }
 
-    // 2. Criar Documento do Usuário (Admin)
+    // 2. Gerar Tenant ID único e imutável
+    const tenantId = crypto.randomUUID()
+
+    // 3. Criar Documento do Usuário (Admin) no AuthDB
     const newUser: User = {
       _id: userId,
       type: 'user',
@@ -136,22 +139,19 @@ const handleSignup = async (): Promise<void> => {
       passwordHash: password.value, // Simplificado para MVP
       role: 'admin',
       status: 'active',
+      tenantId: tenantId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       paymentStatus: 'pending'
     }
 
-    // 3. Criar Documento de Configuração do Escritório
-    const configId = 'config:main'
-    let currentConfig: Partial<AppConfig> = {}
-    try {
-      currentConfig = await db.get(configId)
-    } catch (err: unknown) {
-      if ((err as { status?: number }).status !== 404) throw err
-    }
+    // 4. Inicializar Sessão de Trabalho do Tenant
+    initUserSession(tenantId)
+    const workDB = getWorkDB()
 
+    // 5. Criar Documento de Configuração do Escritório no WorkDB
+    const configId = 'config:main'
     const newConfig: AppConfig = {
-      ...currentConfig,
       _id: configId,
       type: 'config',
       officeName: officeName.value,
@@ -167,12 +167,12 @@ const handleSignup = async (): Promise<void> => {
         state: state.value
       },
       updatedAt: new Date().toISOString(),
-      createdAt: currentConfig.createdAt || new Date().toISOString()
+      createdAt: new Date().toISOString()
     }
 
-    // 4. Salvar no Banco (Temporário sem asaas fields para garantir criação)
-    await db.put(newUser)
-    await db.put(newConfig)
+    // 6. Salvar nos Bancos Corretos
+    await db.put(newUser) // Salva no AuthDB
+    await workDB.put(newConfig) // Salva no WorkDB (isolado)
 
     // 5. Integração com Asaas
     const asaasResult = await window.api.asaas.setupPayment({
@@ -190,7 +190,7 @@ const handleSignup = async (): Promise<void> => {
       return
     }
 
-    // 6. Atualizar usuário com dados do Asaas
+    // 8. Atualizar usuário com dados do Asaas (No AuthDB)
     const updatedUser = await db.get<User>(userId)
     await db.put({
       ...updatedUser,
@@ -199,11 +199,12 @@ const handleSignup = async (): Promise<void> => {
       asaasInvoiceUrl: asaasResult.invoiceUrl
     })
 
-    // 7. Iniciar Sessão
+    // 9. Iniciar Sessão Local
     localStorage.setItem(
       'cca_session',
       JSON.stringify({
         id: newUser._id,
+        tenantId: tenantId,
         name: newUser.name,
         role: newUser.role,
         email: newUser.email,
