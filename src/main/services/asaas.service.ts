@@ -26,6 +26,17 @@ export interface AsaasSubscription {
   status: string
 }
 
+export interface AsaasPayment {
+  id: string
+  status: string
+  value: number
+  netValue: number
+  billingType: string
+  invoiceUrl: string
+  dueDate: string
+  paymentDate?: string
+}
+
 interface AsaasListResponse<T> {
   data: T[]
   totalCount: number
@@ -123,7 +134,24 @@ export const AsaasService = {
         access_token: ASAAS_API_KEY || ''
       }
     })
-    return response.json()
+    const result = (await response.json()) as AsaasSubscription & AsaasErrorResponse
+    if (result.errors) {
+      throw new Error(result.errors[0].description)
+    }
+    return result
+  },
+
+  async getSubscriptionPayments(subscriptionId: string): Promise<AsaasPayment[]> {
+    const response = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionId}/payments`, {
+      headers: {
+        access_token: ASAAS_API_KEY || ''
+      }
+    })
+    const data = (await response.json()) as AsaasListResponse<AsaasPayment> & AsaasErrorResponse
+    if (data.errors) {
+      throw new Error(data.errors[0].description)
+    }
+    return data.data || []
   },
 
   async cancelSubscription(subscriptionId: string): Promise<void> {

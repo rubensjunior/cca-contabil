@@ -21,18 +21,10 @@ const checkPaymentStatus = async (): Promise<void> => {
   try {
     const result = await window.api.asaas.getSubscriptionStatus(subscriptionId.value)
     if (result.success) {
-      status.value = result.status?.toLowerCase() || 'pending'
-      
-      // No Asaas, status 'ACTIVE' ou pagamentos confirmados indicam sucesso
-      // Para simplificar, se o status não for mais 'pending' ou se tivermos confirmação
-      // Nota: Asaas subscriptions podem levar um tempo para atualizar.
-      // O ideal é verificar se a primeira fatura está paga.
-      
-      if (
-        status.value === 'active' ||
-        status.value === 'received' ||
-        status.value === 'confirmed'
-      ) {
+      status.value = result.paymentStatus?.toLowerCase() || 'pending'
+
+      // Só libera o acesso se o pagamento estiver confirmado/recebido
+      if (result.isPaid) {
         // Atualizar Banco Local
         const userId = session.id
         const user = await db.get<User>(userId)
@@ -46,8 +38,10 @@ const checkPaymentStatus = async (): Promise<void> => {
         session.paymentStatus = 'paid'
         localStorage.setItem('cca_session', JSON.stringify(session))
 
-        // Redirecionar
-        router.push('/dashboard')
+        // Redirecionar com um pequeno delay para o usuário ver a confirmação
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1500)
       }
     } else {
       error.value = 'Erro ao verificar status: ' + result.error
@@ -65,12 +59,19 @@ const openCheckout = (): void => {
   }
 }
 
+const handleLogout = async (): Promise<void> => {
+  if (checkInterval) clearInterval(checkInterval)
+  localStorage.removeItem('cca_session')
+  router.push('/login')
+}
+
 onMounted(() => {
   if (!subscriptionId.value) {
-    router.push('/signup')
+    error.value =
+      'Configuração de pagamento não encontrada. Por favor, faça logout e tente novamente.'
     return
   }
-  
+
   // Verificar imediatamente
   checkPaymentStatus()
 
@@ -88,10 +89,14 @@ onUnmounted(() => {
     <!-- Background Decor -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+      <div
+        class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"
+      ></div>
     </div>
 
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 animate-fade-in">
+    <div
+      class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 animate-fade-in"
+    >
       <div class="flex flex-col items-center text-center">
         <!-- Icon -->
         <div
@@ -115,7 +120,8 @@ onUnmounted(() => {
 
         <h2 class="text-2xl font-bold text-white mb-2">Quase lá!</h2>
         <p class="text-slate-400 mb-8">
-          Sua conta foi criada com sucesso. Para começar a usar o <strong>CCA. Split</strong>, realize o pagamento da primeira mensalidade.
+          Sua conta foi criada com sucesso. Para começar a usar o
+          <strong>CCA. Split</strong>, realize o pagamento da primeira mensalidade.
         </p>
 
         <!-- Status Card -->
@@ -126,18 +132,43 @@ onUnmounted(() => {
             >
             <span
               class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tighter"
-              :class="
-                status === 'pending'
-                  ? 'bg-amber-500/10 text-amber-500'
-                  : 'bg-blue-500/10 text-blue-500'
-              "
+              :class="{
+                'bg-amber-500/10 text-amber-500': status === 'pending',
+                'bg-blue-500/10 text-blue-500': status === 'confirmed',
+                'bg-emerald-500/10 text-emerald-500': status === 'received'
+              }"
             >
-              {{ status === 'pending' ? 'Aguardando' : 'Processando' }}
+              {{
+                status === 'pending'
+                  ? 'Aguardando'
+                  : status === 'confirmed'
+                    ? 'Confirmado'
+                    : status === 'received'
+                      ? 'Recebido'
+                      : 'Verificando'
+              }}
             </span>
           </div>
           <div class="flex items-center gap-3">
-             <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-             <p class="text-sm text-slate-300">Verificamos seu pagamento automaticamente.</p>
+            <div
+              class="w-2 h-2 rounded-full animate-pulse"
+              :class="{
+                'bg-amber-500': status === 'pending',
+                'bg-blue-500': status === 'confirmed',
+                'bg-emerald-500': status === 'received'
+              }"
+            ></div>
+            <p class="text-sm text-slate-300">
+              {{
+                status === 'pending'
+                  ? 'Buscando confirmação no Asaas...'
+                  : status === 'confirmed'
+                    ? 'Pagamento identificado! Liberando...'
+                    : status === 'received'
+                      ? 'Pagamento recebido com sucesso!'
+                      : 'Atualizando status...'
+              }}
+            </p>
           </div>
         </div>
 
@@ -187,9 +218,17 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <p v-if="error" class="mt-4 text-xs text-red-500 font-medium animate-shake">
-          {{ error }}
-        </p>
+        <div v-if="error" class="mt-4 w-full">
+          <p class="mb-4 text-xs text-red-500 font-medium animate-shake text-center">
+            {{ error }}
+          </p>
+          <button
+            class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all"
+            @click="handleLogout"
+          >
+            Sair e Tentar Novamente
+          </button>
+        </div>
 
         <footer class="mt-8 pt-6 border-t border-slate-800 w-full">
           <p class="text-slate-500 text-[10px] uppercase tracking-widest leading-loose">

@@ -58,6 +58,34 @@ const isValidEmail = (e: string): boolean => {
 }
 
 const currentStep = ref(1)
+const showCpfAlert = ref(false)
+const isCheckingCpf = ref(false)
+const existingCustomerName = ref('')
+
+const checkCpfDuplicity = async (): Promise<void> => {
+  if (cpfCnpj.value.length < 14) return // Mínimo para um CPF formatado
+
+  isCheckingCpf.value = true
+  try {
+    const result = await window.api.asaas.checkCustomer(cpfCnpj.value)
+    if (result.success && result.exists) {
+      existingCustomerName.value = result.name || ''
+      showCpfAlert.value = true
+    } else {
+      currentStep.value++
+    }
+  } catch (err) {
+    console.error('Erro ao verificar CPF:', err)
+    currentStep.value++ // Se falhar a checagem, permite prosseguir (fail-safe)
+  } finally {
+    isCheckingCpf.value = false
+  }
+}
+
+const handleNewBusiness = (): void => {
+  showCpfAlert.value = false
+  currentStep.value++
+}
 
 const nextStep = (): void => {
   error.value = ''
@@ -77,6 +105,9 @@ const nextStep = (): void => {
       error.value = 'Preencha os dados do escritório para continuar.'
       return
     }
+    // Verificação inteligente de CPF
+    checkCpfDuplicity()
+    return // O avanço real acontece dentro de checkCpfDuplicity se não houver duplicidade
   }
   currentStep.value++
 }
@@ -260,7 +291,62 @@ const onCepInput = (e: Event): void => {
 </script>
 
 <template>
-  <div class="h-full bg-white flex selection:bg-blue-500/30 overflow-hidden">
+  <div class="h-full bg-white flex selection:bg-blue-500/30 overflow-hidden relative">
+    <!-- Modal de Alerta: CPF Duplicado -->
+    <Transition name="fade">
+      <div
+        v-if="showCpfAlert"
+        class="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+      >
+        <div
+          class="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 animate-fade-in-up"
+        >
+          <div class="flex flex-col items-center text-center">
+            <div
+              class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 text-amber-500"
+            >
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Conta já identificada!</h3>
+            <p class="text-slate-500 text-sm leading-relaxed mb-8">
+              O CPF/CNPJ <span class="font-bold text-slate-700">{{ cpfCnpj }}</span> já possui uma
+              assinatura ativa no Asaas em nome de
+              <span class="font-bold text-blue-600">{{ existingCustomerName }}</span
+              >.
+            </p>
+
+            <div class="w-full space-y-3">
+              <button
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+                @click="handleNewBusiness"
+              >
+                Gerenciar Novo Negócio
+              </button>
+              <button
+                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+                @click="router.push('/login')"
+              >
+                Já tenho conta / Fazer Login
+              </button>
+            </div>
+
+            <p class="mt-6 text-[10px] text-slate-400 uppercase tracking-widest leading-loose">
+              Escolha "Novo Negócio" se deseja uma conta separada para outra empresa sob o mesmo
+              CPF.
+            </p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Lado Esquerdo: Formulário -->
     <div
       class="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 lg:px-24 bg-white relative overflow-hidden"
@@ -551,10 +637,34 @@ const onCepInput = (e: Event): void => {
             <button
               v-if="currentStep < 3"
               type="button"
-              class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20"
+              :disabled="isCheckingCpf"
+              class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 disabled:opacity-70"
               @click="nextStep"
             >
-              Próximo Passo
+              <span v-if="!isCheckingCpf">Próximo Passo</span>
+              <span v-else class="flex items-center gap-2">
+                <svg
+                  class="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Validando...
+              </span>
             </button>
 
             <button
@@ -788,5 +898,15 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: #f1f5f9;
   -webkit-box-shadow: 0 0 0px 1000px #020617 inset;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

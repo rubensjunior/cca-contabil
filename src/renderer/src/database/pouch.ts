@@ -106,8 +106,14 @@ export const initUserSession = (tenantId: string): void => {
  * Limpa a sessão e desvincula o banco de dados atual.
  */
 export const closeSession = async (): Promise<void> => {
+  console.log('Finalizando sessão e limpando bases temporárias...')
   if (workDB) {
-    workDB = null
+    try {
+      // Opcional: fechar conexões ativas se o pouch suportar
+      workDB = null
+    } catch (e) {
+      console.error('Erro ao fechar workDB:', e)
+    }
   }
   localStorage.removeItem('cca_session')
 }

@@ -26,9 +26,14 @@ declare global {
           success: boolean
           status?: string
           invoiceUrl?: string
+          isPaid?: boolean
+          paymentStatus?: string
           error?: string
         }>
         cancelSubscription: (id: string) => Promise<{ success: boolean; error?: string }>
+        checkCustomer: (
+          cpfCnpj: string
+        ) => Promise<{ success: boolean; exists?: boolean; name?: string; error?: string }>
       }
     }
   }

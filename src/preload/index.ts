@@ -12,7 +12,8 @@ const api = {
     setupPayment: (data: { name: string; email: string; cpfCnpj: string; mobilePhone: string }) =>
       ipcRenderer.invoke('asaas:setup-payment', data),
     getSubscriptionStatus: (id: string) => ipcRenderer.invoke('asaas:get-subscription-status', id),
-    cancelSubscription: (id: string) => ipcRenderer.invoke('asaas:cancel-subscription', id)
+    cancelSubscription: (id: string) => ipcRenderer.invoke('asaas:cancel-subscription', id),
+    checkCustomer: (cpfCnpj: string) => ipcRenderer.invoke('asaas:check-customer', cpfCnpj)
   }
 }
 

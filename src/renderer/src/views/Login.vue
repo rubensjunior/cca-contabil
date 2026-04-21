@@ -29,7 +29,7 @@ const handleLogin = async (): Promise<void> => {
       // Inicializar banco de dados do Tenant
       initUserSession(user.tenantId)
 
-      // Simular sessão local
+      // Simular sessão local com dados de pagamento
       localStorage.setItem(
         'cca_session',
         JSON.stringify({
@@ -37,7 +37,11 @@ const handleLogin = async (): Promise<void> => {
           tenantId: user.tenantId,
           name: user.name,
           role: user.role,
-          email: user.email
+          email: user.email,
+          subscriptionId: user.asaasSubscriptionId,
+          invoiceUrl: user.asaasInvoiceUrl,
+          paymentStatus: user.paymentStatus || 'pending',
+          isPaid: user.paymentStatus === 'paid'
         })
       )
 

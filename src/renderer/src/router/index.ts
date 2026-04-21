@@ -40,20 +40,48 @@ const router = createRouter({
   routes
 })
 
+interface SessionData {
+  id: string
+  tenantId: string
+  paymentStatus?: string
+  isPaid?: boolean
+}
+
 // Navigation Guard simples para autenticação local
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, from, next) => {
   routerState.isLoading = true
   const session = localStorage.getItem('cca_session')
 
-  if (to.meta.requiresAuth && !session) {
+  console.log(`Router: Indo de ${from.path} para ${to.path}. Sessão: ${!!session}`)
+
+  // 1. Validar se a sessão é real (contém ID e Tenant)
+  let sessionData: SessionData | null = null
+  if (session) {
+    try {
+      const parsed = JSON.parse(session)
+      if (parsed && typeof parsed === 'object' && parsed.id && parsed.tenantId) {
+        sessionData = parsed as SessionData
+      } else {
+        console.warn('Router: Sessão inválida detectada. Limpando...')
+        localStorage.removeItem('cca_session')
+      }
+    } catch (e) {
+      console.error('Router: Erro ao ler sessão:', e)
+      localStorage.removeItem('cca_session')
+    }
+  }
+
+  // 2. Lógica de Redirecionamento
+  if (to.meta.requiresAuth && !sessionData) {
+    console.log('Router: Protegido e sem sessão. Indo para Login.')
     next('/login')
-  } else if (to.path === '/login' && session) {
+  } else if (to.path === '/login' && sessionData) {
+    console.log('Router: Já logado. Pulando para Dashboard.')
     next('/dashboard')
-  } else if (to.meta.requiresPayment && session) {
-    const sessionData = JSON.parse(session)
-    // Redirecionar para checkout se o pagamento for pendente (baseado na sessão inicial)
-    // Em um app real, verificaríamos o status atualizado no banco/API
+  } else if (to.meta.requiresPayment && sessionData) {
+    // Redirecionar para checkout se o pagamento for pendente
     if (sessionData.paymentStatus === 'pending' || !sessionData.isPaid) {
+      console.log('Router: Pagamento pendente. Indo para Checkout.')
       next('/checkout')
     } else {
       next()

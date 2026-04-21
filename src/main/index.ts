@@ -79,7 +79,22 @@ function createWindow(): void {
   ipcMain.handle('asaas:get-subscription-status', async (_, subscriptionId: string) => {
     try {
       const sub = await AsaasService.getSubscription(subscriptionId)
-      return { success: true, status: sub.status, invoiceUrl: sub.invoiceUrl }
+      const payments = await AsaasService.getSubscriptionPayments(subscriptionId)
+
+      // Verificar se existe algum pagamento com status que liberte o acesso
+      // RECEIVED: Pagamento em conta
+      // CONFIRMED: Pagamento confirmado (ex: cartão aprovação imediata)
+      const confirmedPayment = payments.find(
+        (p) => p.status === 'RECEIVED' || p.status === 'CONFIRMED'
+      )
+
+      return {
+        success: true,
+        status: sub.status,
+        invoiceUrl: sub.invoiceUrl,
+        isPaid: !!confirmedPayment,
+        paymentStatus: confirmedPayment ? confirmedPayment.status : 'PENDING'
+      }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
@@ -89,6 +104,18 @@ function createWindow(): void {
     try {
       await AsaasService.cancelSubscription(subscriptionId)
       return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  ipcMain.handle('asaas:check-customer', async (_, cpfCnpj: string) => {
+    try {
+      const customer = await AsaasService.findCustomerByCpfCnpj(cpfCnpj)
+      if (customer) {
+        return { success: true, exists: true, name: customer.name }
+      }
+      return { success: true, exists: false }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
