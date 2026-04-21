@@ -2,16 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
-import {
-  BarChart3,
-  Users2,
-  Receipt,
-  ArrowUpRight,
-  Plus,
-  Compass,
-  ArrowUpCircle,
-  HelpCircle
-} from 'lucide-vue-next'
+import { BarChart3, Compass, HelpCircle, User } from 'lucide-vue-next'
 import OnboardingWizard from '../components/OnboardingWizard.vue'
 
 const router = useRouter()
@@ -24,10 +15,6 @@ interface UserSession {
   company?: string
   subscriptionId?: string
 }
-
-const isCancelling = ref(false)
-const cancelError = ref('')
-
 const user = ref<UserSession | null>(null)
 const config = ref<AppConfig | null>(null)
 const showOnboarding = ref(false)
@@ -83,252 +70,586 @@ const handleCompleteOnboarding = async (data: {
 const handleOpenOnboarding = (): void => {
   showOnboarding.value = true
 }
-
-const handleCancelSubscription = async (): Promise<void> => {
-  if (!user.value?.subscriptionId) return
-  const confirmed = confirm(
-    'Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso ao sistema imediatamente após o cancelamento.'
-  )
-  if (!confirmed) return
-
-  isCancelling.value = true
-  cancelError.value = ''
-
-  try {
-    const result = await window.api.asaas.cancelSubscription(user.value.subscriptionId)
-    if (result.success) {
-      alert('Assinatura cancelada com sucesso.')
-      handleLogout()
-    } else {
-      cancelError.value = 'Erro ao cancelar: ' + result.error
-    }
-  } catch (err) {
-    console.error(err)
-    cancelError.value = 'Ocorreu um erro inesperado.'
-  } finally {
-    isCancelling.value = false
-  }
-}
 </script>
 
 <template>
-  <div class="h-full bg-slate-50 text-slate-900 flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 p-6 flex flex-col shadow-sm">
-      <div class="mb-10">
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-          CCA<span class="text-blue-600">.</span> Split
-        </h1>
+  <div
+    class="h-[calc(100vh-48px)] bg-[var(--metronic-bg)] text-slate-900 flex overflow-hidden font-inter"
+  >
+    <!-- Sidebar (Metronic Style) -->
+    <aside class="w-[280px] bg-[#1e1e2d] flex flex-col z-30 transition-all shrink-0">
+      <!-- Logo Area -->
+      <div class="h-[100px] flex items-center px-9">
+        <div class="flex items-center gap-4">
+          <div
+            class="w-11 h-11 bg-[var(--cca-blue)] rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20"
+          >
+            <span class="text-white text-2xl font-black">C</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-white brand-logo text-xl tracking-tight leading-4"
+              >CCA.SPLIT</span
+            >
+            <span
+              class="text-[10px] text-[var(--metronic-sidebar-text)] font-bold uppercase tracking-[0.2em] opacity-40 mt-1"
+              >HUB CORPORATIVO</span
+            >
+          </div>
+        </div>
       </div>
 
-      <nav class="flex-1 space-y-1">
+      <!-- Scrollable Menu -->
+      <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-sidebar-scroll">
+        <!-- Quick Tasks -->
         <div
-          class="p-3 bg-blue-50 text-blue-700 rounded-xl font-bold border border-blue-100 flex items-center gap-3 transition-all cursor-default"
+          class="flex items-center justify-between px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white cursor-pointer transition-all group"
         >
-          <Compass :size="18" />
-          Panorama Geral
+          <div class="flex items-center gap-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="opacity-50 group-hover:opacity-100"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+            <span class="text-[13px] font-bold">Tasks</span>
+          </div>
+          <span class="bg-[#009ef7] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+            6
+          </span>
         </div>
+
         <div
-          class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
+          class="flex items-center justify-between px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white cursor-pointer transition-all group"
         >
-          <Users2 :size="18" />
-          Clientes
+          <div class="flex items-center gap-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="opacity-50 group-hover:opacity-100"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            <span class="text-[13px] font-bold">Activities</span>
+          </div>
+          <span class="bg-[#f1416c] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+            24
+          </span>
         </div>
+
+        <div class="pt-6 pb-2 px-5">
+          <p
+            class="text-[10px] font-black text-[var(--metronic-sidebar-text)] uppercase tracking-[0.2em] opacity-20"
+          >
+            Dashboards
+          </p>
+        </div>
+
+        <!-- Dashboard Submenu -->
+        <div class="space-y-1">
+          <div
+            class="flex items-center justify-between px-5 py-3 rounded-xl bg-[#1b1b28] text-white cursor-default"
+          >
+            <div class="flex items-center gap-4">
+              <Compass :size="20" class="text-[var(--cca-blue)]" />
+              <span class="text-[13px] font-bold">Panorama Geral</span>
+            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="opacity-50"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+
+          <div class="pl-[52px] space-y-1 pr-4">
+            <div
+              class="py-2.5 text-[13px] text-[var(--metronic-sidebar-text)] hover:text-white cursor-not-allowed opacity-50 flex items-center gap-3"
+            >
+              <div class="w-1.5 h-1.5 rounded-full bg-current opacity-30"></div>
+              Relatórios Financeiros
+            </div>
+            <div
+              class="py-2.5 text-[13px] text-[var(--metronic-sidebar-text)] hover:text-white cursor-not-allowed opacity-50 flex items-center gap-3"
+            >
+              <div class="w-1.5 h-1.5 rounded-full bg-current opacity-30"></div>
+              Gestão de Clientes
+            </div>
+          </div>
+        </div>
+
         <div
-          class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
+          class="pt-6 pb-2 px-5 font-black text-[10px] text-[var(--metronic-sidebar-text)] uppercase tracking-[0.2em] opacity-20"
         >
-          <Receipt :size="18" />
-          Time de Especialistas
+          Configurações
         </div>
-        <div
-          class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
+
+        <router-link
+          to="/profile"
+          class="w-full flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
         >
-          <BarChart3 :size="18" />
-          Gestão de Repasses
-        </div>
+          <User :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
+          <span class="text-[13px] font-bold">Meu Perfil</span>
+        </router-link>
+
         <button
-          class="w-full p-3 text-slate-500 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all flex items-center gap-3"
+          class="w-full flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
           @click="handleOpenOnboarding"
         >
-          <HelpCircle :size="18" />
-          Guia de Início
+          <HelpCircle :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
+          <span class="text-[13px] font-bold">Guia de Início</span>
         </button>
-        <router-link
-          to="/dashboard/sales"
-          class="p-3 text-blue-600 hover:bg-blue-50 bg-white border border-transparent hover:border-blue-100 rounded-xl transition-all flex items-center gap-3 group"
-        >
-          <ArrowUpCircle :size="18" class="group-hover:rotate-12 transition-transform" />
-          <span class="font-bold">Upgrade & Planos</span>
-        </router-link>
       </nav>
 
-      <div class="pt-6 border-t border-slate-100">
-        <div
-          v-if="user"
-          class="flex items-center gap-3 mb-4 p-2 bg-slate-50 rounded-2xl border border-slate-100"
-        >
-          <div
-            class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white font-bold"
+      <!-- Sidebar Footer (Avatar & Logout) -->
+      <div class="p-8 border-t border-white/5">
+        <div class="flex items-center justify-between">
+          <router-link to="/profile" class="flex items-center gap-3 group">
+            <div
+              class="w-10 h-10 rounded-xl bg-[var(--cca-blue-soft)] flex items-center justify-center border border-white/10 overflow-hidden group-hover:border-blue-500/50 transition-colors"
+            >
+              <span class="text-white font-black text-sm">{{ user?.name.charAt(0) }}</span>
+            </div>
+            <div class="flex flex-col">
+              <span
+                class="text-white text-[12px] font-black truncate w-24 group-hover:text-blue-400 transition-colors"
+                >{{ user?.name }}</span
+              >
+              <span
+                class="text-[10px] text-[var(--metronic-sidebar-text)] font-bold opacity-40 uppercase truncate w-24"
+                >{{ user?.role }}</span
+              >
+            </div>
+          </router-link>
+          <button
+            class="p-3 rounded-xl bg-white/5 text-[var(--metronic-sidebar-text)] hover:bg-[var(--metronic-danger)] hover:text-white transition-all group shadow-sm"
+            @click="handleLogout"
           >
-            {{ user.name.charAt(0) }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold truncate text-slate-900">{{ user.name }}</p>
-            <p class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-              {{ user.role }}
-            </p>
-          </div>
-        </div>
-        <button
-          class="w-full text-left p-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all flex items-center justify-center font-bold text-xs uppercase tracking-widest border border-transparent hover:border-red-100"
-          @click="handleLogout"
-        >
-          Sair do Sistema
-        </button>
-        <div
-          class="mt-6 text-[9px] uppercase tracking-wider text-slate-400 text-center font-medium leading-relaxed"
-        >
-          Powered by<br />
-          <span class="text-slate-500 font-bold">CCA Contabilidade e RKS Tech Solution</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="group-hover:rotate-12 transition-transform"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
         </div>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-10 overflow-auto">
-      <header class="flex justify-between items-start mb-10">
-        <div>
-          <h2 class="text-3xl font-bold text-slate-900">Olá, {{ user?.name }}</h2>
-          <p class="text-slate-500 mt-1">
-            Organização:
-            <span class="text-blue-600 font-bold">{{
-              config?.companyName || 'Não configurado'
-            }}</span>
-          </p>
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Toolbar (Metronic 1:1 Style) -->
+      <header
+        class="h-[100px] bg-white px-10 flex items-center justify-between shrink-0 border-b border-slate-100"
+      >
+        <div class="flex flex-col">
+          <!-- Breadcrumbs -->
+          <div class="flex items-center gap-2 mb-1.5">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#94a3b8"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span class="text-slate-300 text-xs font-bold">/</span>
+            <span
+              class="text-[#94a3b8] text-xs font-bold hover:text-[var(--cca-blue)] cursor-pointer transition-colors leading-none"
+              >Dashboards</span
+            >
+          </div>
+          <h2 class="text-[26px] font-black text-[#1e1e2d] tracking-tight leading-none">
+            Panorama Geral
+          </h2>
         </div>
 
-        <div class="flex gap-4">
-          <div class="bg-white border border-slate-200 px-4 py-3 rounded-2xl shadow-sm">
-            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">
-              Plano Profissional
-            </p>
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-              <p class="text-sm font-bold text-slate-900">Ativo</p>
-            </div>
+        <div class="flex items-center gap-6">
+          <div class="flex flex-col items-end mr-2">
+            <span class="text-xs font-black text-slate-900">{{ user?.name }}</span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {{ config?.companyName || 'Hub Corporativo' }}
+            </span>
           </div>
           <button
-            :disabled="isCancelling"
-            class="bg-white border border-red-100 hover:bg-red-50 text-red-600 px-4 py-3 rounded-2xl shadow-sm text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50"
-            @click="handleCancelSubscription"
+            class="bg-[#009ef7] hover:bg-[#008be0] text-white px-7 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95"
           >
-            <svg
-              v-if="isCancelling"
-              class="animate-spin h-3 w-3"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            Cancelar Assinatura
+            Criar Novo
           </button>
         </div>
       </header>
 
-      <div
-        v-if="cancelError"
-        class="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium animate-shake"
-      >
-        {{ cancelError }}
-      </div>
-
-      <div class="grid grid-cols-3 gap-6">
-        <!-- Stats Cards -->
-        <div
-          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
-        >
+      <!-- Dashboard Body -->
+      <div class="flex-1 p-10 overflow-auto space-y-10">
+        <!-- 6 Column KPI Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
+          <!-- Card 1 -->
           <div
-            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-blue-50 transition-colors"
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
           >
-            <ArrowUpRight :size="48" />
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">327</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">Projetos</span>
+            <div
+              class="bg-[var(--metronic-success-light)] text-[var(--metronic-success)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+              2.1%
+            </div>
           </div>
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
-            Total em Cobranças
-          </p>
-          <p
-            class="text-4xl font-black text-slate-900 group-hover:text-blue-600 transition-colors relative z-10"
-          >
-            R$ 0,00
-          </p>
-        </div>
 
-        <div
-          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-blue-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
-        >
+          <!-- Card 2 -->
           <div
-            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-blue-50 transition-colors"
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
           >
-            <Receipt :size="48" />
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <BarChart3 :size="24" stroke-width="3" />
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">27,5M</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">Vendas Qty</span>
+            <div
+              class="bg-[var(--metronic-success-light)] text-[var(--metronic-success)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+              2.1%
+            </div>
           </div>
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
-            Aguardando Pagamento
-          </p>
-          <p
-            class="text-4xl font-black text-slate-900 group-hover:text-blue-600 transition-colors relative z-10"
-          >
-            0
-          </p>
-        </div>
 
-        <div
-          class="relative bg-white border border-slate-200 p-8 rounded-[2.5rem] group hover:border-emerald-500/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
-        >
+          <!-- Card 3 -->
           <div
-            class="absolute top-0 right-0 p-6 text-slate-100 group-hover:text-emerald-50 transition-colors"
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
           >
-            <BarChart3 :size="48" />
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">149M</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">
+              Valor em Estoque
+            </span>
+            <div
+              class="bg-[var(--metronic-danger-light)] text-[var(--metronic-danger)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              0.47%
+            </div>
           </div>
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 relative z-10">
-            Próximos Splits
-          </p>
-          <p
-            class="text-4xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors relative z-10"
-          >
-            R$ 0,00
-          </p>
-        </div>
-      </div>
 
-      <!-- Empty State -->
-      <div class="mt-10 bg-white border border-slate-200 rounded-3xl p-20 text-center shadow-sm">
-        <div
-          class="w-20 h-20 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-8 text-slate-300 group-hover:rotate-6 transition-transform"
-        >
-          <Plus :size="32" />
+          <!-- Card 4 -->
+          <div
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">89M</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">CAPEX Hub</span>
+            <div
+              class="bg-[var(--metronic-success-light)] text-[var(--metronic-success)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+              2.1%
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="m16 8-8 8" />
+                <path d="m8 8 8 8" />
+              </svg>
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">72.4%</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">OPEX Margin</span>
+            <div
+              class="bg-[var(--metronic-danger-light)] text-[var(--metronic-danger)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              0.647%
+            </div>
+          </div>
+
+          <!-- Card 6 -->
+          <div
+            class="bg-white p-7 rounded-[20px] shadow-[var(--metronic-shadow)] border border-slate-50 flex flex-col items-start min-h-[180px]"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 text-slate-400"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
+              </svg>
+            </div>
+            <span class="text-3xl font-black text-[#1e1e2d] mb-1">106M</span>
+            <span class="text-[13px] font-bold text-slate-400 mb-4 leading-none">
+              Economia Real
+            </span>
+            <div
+              class="bg-[var(--metronic-success-light)] text-[var(--metronic-success)] text-[11px] font-black px-2.5 py-1 rounded-md flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+              2.1%
+            </div>
+          </div>
         </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Pronto para escalar seu lucro?</h3>
-        <p class="text-slate-500 max-w-sm mx-auto mb-8">
-          Comece configurando sua rede de talentos e vincule seus primeiros clientes para
-          automatizar as divisões e proteger sua margem.
-        </p>
-        <button
-          class="bg-slate-100 text-slate-400 px-8 py-3 rounded-xl font-bold transition-all opacity-50 cursor-not-allowed border border-slate-200"
-        >
-          Novo Cliente
-        </button>
+
+        <!-- Charts Row (Reference Placeholder) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 pb-10">
+          <div
+            class="bg-white p-10 rounded-[30px] shadow-[var(--metronic-shadow)] border border-slate-50"
+          >
+            <h3
+              class="text-lg font-black text-slate-800 mb-2 leading-none uppercase tracking-tight"
+            >
+              Análise Setorial
+            </h3>
+            <p class="text-slate-400 text-sm font-bold mb-10 leading-none">
+              Distribuição de fluxos por empresa
+            </p>
+
+            <!-- Radial Chart Mockup -->
+            <div
+              class="h-64 bg-slate-50 rounded-3xl flex items-center justify-center border border-dashed border-slate-200"
+            >
+              <span class="text-slate-300 font-black text-xs uppercase tracking-widest"
+                >Módulo de Gráficos Radiais</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="bg-white p-10 rounded-[30px] shadow-[var(--metronic-shadow)] border border-slate-50"
+          >
+            <div class="flex justify-between items-start mb-10 leading-none">
+              <div class="flex flex-col">
+                <h3 class="text-lg font-black text-slate-800 mb-2 uppercase tracking-tight">
+                  Performance Mensal
+                </h3>
+                <p class="text-slate-400 text-sm font-bold">Volume processado em milhões</p>
+              </div>
+              <div
+                class="p-4 bg-slate-50 rounded-2xl flex items-center gap-3 border border-slate-100"
+              >
+                <span class="text-xs font-black text-slate-600 uppercase">Período Fiscal</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="opacity-30"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Bar Chart Mockup -->
+            <div
+              class="h-64 bg-slate-50 rounded-3xl flex items-center justify-center border border-dashed border-slate-200"
+            >
+              <span class="text-slate-300 font-black text-xs uppercase tracking-widest"
+                >Módulo de Histograma Corporativo</span
+              >
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 

@@ -63,7 +63,7 @@ const features = [
     <section class="relative z-10 pt-16 pb-32 px-6 overflow-hidden">
       <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
         <div class="space-y-8 animate-fade-in-left">
-          <div class="text-3xl font-black text-white mb-12">
+          <div class="brand-logo text-3xl text-white mb-12">
             CCA<span class="text-blue-500">.</span> Split
           </div>
 

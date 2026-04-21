@@ -5,6 +5,7 @@ import Dashboard from '../views/Dashboard.vue'
 import Checkout from '../views/Checkout.vue'
 import LandingPage from '../views/LandingPage.vue'
 import InternalSales from '../views/InternalSales.vue'
+import Profile from '../views/Profile.vue'
 
 import { routerState } from './routerState'
 
@@ -41,6 +42,12 @@ const routes = [
     name: 'Checkout',
     component: Checkout,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true, requiresPayment: true }
   }
 ]
 

@@ -24,30 +24,20 @@ import TitleBar from './components/TitleBar.vue'
 </template>
 
 <style>
-/* Reset global agressivo para evitar scroll duplo */
+/* Reset global equilibrado */
 html,
 body,
 #app {
-  height: 100vh !important;
-  width: 100vw !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  position: fixed; /* Previne qualquer tentativa de scroll do sistema */
-}
-
-/* Remove scrollbar nativa apenas dos elementos raiz */
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 .app-container {
-  height: 100vh !important;
-  width: 100vw !important;
+  min-height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
-  overflow: hidden !important;
   background: #ffffff;
 }
 
@@ -65,9 +55,9 @@ body::-webkit-scrollbar {
 .main-content {
   flex: 1;
   position: relative;
-  overflow-y: auto !important;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* Permite scroll nas páginas que precisarem */
 }
 
 /* Scrollbar styling - EXCLUSIVO para o conteúdo principal */

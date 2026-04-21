@@ -14,6 +14,7 @@ export interface BaseDoc {
 export interface User extends BaseDoc {
   type: 'user'
   name: string
+  nickname?: string
   email: string
   passwordHash: string
   role: 'admin' | 'partner' | 'clerk'

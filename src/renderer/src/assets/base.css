@@ -15,15 +15,31 @@
   --ev-c-text-2: #4b5563;
   --ev-c-text-3: #9ca3af;
 
-  --ev-blue-primary: #2563eb;
-  --ev-blue-hover: #1d4ed8;
+  --cca-blue: #2563eb;
+  --cca-blue-soft: rgba(37, 99, 235, 0.1);
+  --cca-blue-hover: #1d4ed8;
 
-  --ev-button-alt-border: var(--ev-c-gray-3);
-  --ev-button-alt-text: var(--ev-c-text-1);
-  --ev-button-alt-bg: var(--ev-c-white);
-  --ev-button-alt-hover-border: var(--ev-c-gray-1);
-  --ev-button-alt-hover-text: var(--ev-c-text-1);
-  --ev-button-alt-hover-bg: var(--ev-c-white-mute);
+  --metronic-bg: #f9fafb;
+  --metronic-sidebar-bg: #1e1e2d;
+  --metronic-sidebar-text: #a2a3b7;
+  --metronic-sidebar-hover: #1b1b28;
+  --metronic-sidebar-active-bg: #1b1b28;
+  --metronic-sidebar-active-text: #ffffff;
+  
+  --metronic-success: #50cd89;
+  --metronic-danger: #f1416c;
+  --metronic-warning: #ffc700;
+  --metronic-info: #7239ea;
+
+  /* Badges estilo imagem de referência */
+  --metronic-success-light: #e8fff3;
+  --metronic-danger-light: #fff5f8;
+
+  --metronic-shadow: 0 0.5rem 1.5rem 0.5rem rgba(0, 0, 0, 0.05);
+  --metronic-radius: 0.75rem;
+
+  --ev-blue-primary: var(--cca-blue);
+  --ev-blue-hover: var(--cca-blue-hover);
 }
 
 :root {
@@ -38,8 +54,12 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  font-weight: normal;
+}
+
+.brand-logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 ul {
@@ -47,12 +67,9 @@ ul {
 }
 
 body {
-  height: 100vh !important;
-  width: 100vw !important;
-  overflow: hidden !important;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  position: fixed;
   color: var(--color-text);
   background: var(--color-background);
   line-height: 1.6;
@@ -72,4 +89,40 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars - Metronic Style */
+.custom-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Main content scrollbar override */
+.main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
 }

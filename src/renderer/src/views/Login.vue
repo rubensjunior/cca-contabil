@@ -222,7 +222,7 @@ const handleLogin = async (): Promise<void> => {
             to="/"
             class="inline-flex items-center justify-center mb-4 transition-opacity hover:opacity-80"
           >
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900">
+            <h1 class="text-4xl brand-logo tracking-tight text-slate-900">
               CCA<span class="text-blue-600">.</span> Split
             </h1>
           </router-link>
