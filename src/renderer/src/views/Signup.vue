@@ -186,6 +186,39 @@ const handleSignup = async (): Promise<void> => {
     isLoading.value = false
   }
 }
+
+// Funções de Máscara
+const onCpfCnpjInput = (e: Event): void => {
+  const target = e.target as HTMLInputElement
+  let v = target.value.replace(/\D/g, '')
+
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+  } else {
+    v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2')
+    v = v.replace(/(\d{4})(\d)/, '$1-$2')
+  }
+  cpfCnpj.value = v.substring(0, 18)
+}
+
+const onPhoneInput = (e: Event): void => {
+  const target = e.target as HTMLInputElement
+  let v = target.value.replace(/\D/g, '')
+  v = v.replace(/^(\d{2})(\d)/g, '($1) $2')
+  v = v.replace(/(\d)(\d{4})$/, '$1-$2')
+  phone.value = v.substring(0, 15)
+}
+
+const onCepInput = (e: Event): void => {
+  const target = e.target as HTMLInputElement
+  let v = target.value.replace(/\D/g, '')
+  v = v.replace(/^(\d{5})(\d)/, '$1-$2')
+  cep.value = v.substring(0, 9)
+}
 </script>
 
 <template>
@@ -195,9 +228,19 @@ const handleSignup = async (): Promise<void> => {
       class="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 lg:px-24 bg-white relative overflow-hidden"
     >
       <div class="w-full max-w-xl flex flex-col items-center animate-fade-in-up">
+        <!-- Logo Typography Corporate -->
+        <div class="mb-4 text-center flex flex-col items-center">
+          <div class="inline-flex items-center justify-center mb-2">
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+              CCA<span class="text-blue-600">.</span> Split
+            </h1>
+          </div>
+          <p class="text-slate-500 text-sm">Crie sua conta profissional hoje</p>
+        </div>
+
         <!-- Plan Card -->
         <div
-          class="mb-6 p-5 rounded-2xl bg-slate-900 text-white flex items-center justify-between shadow-lg shadow-slate-200 border border-slate-800 relative overflow-hidden animate-fade-in-up"
+          class="mb-6 p-5 rounded-2xl bg-slate-900 text-white flex items-center justify-between shadow-lg shadow-slate-200 border border-slate-800 relative overflow-hidden animate-fade-in-up w-full"
           style="animation-delay: 0.1s"
         >
           <div class="relative z-10">
@@ -294,8 +337,9 @@ const handleSignup = async (): Promise<void> => {
                   v-model="cpfCnpj"
                   type="text"
                   required
-                  placeholder="00.000.000/0000-00"
+                  placeholder="000.000.000-00"
                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  @input="onCpfCnpjInput"
                 />
               </div>
 
@@ -309,6 +353,7 @@ const handleSignup = async (): Promise<void> => {
                   required
                   placeholder="(00) 00000-0000"
                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  @input="onPhoneInput"
                 />
               </div>
             </template>
@@ -326,8 +371,10 @@ const handleSignup = async (): Promise<void> => {
                     required
                     placeholder="00000-000"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    @input="onCepInput"
                     @blur="fetchAddressByCep"
                   />
+
                   <div v-if="isSearchingCep" class="absolute right-4 top-1/2 -translate-y-1/2">
                     <svg
                       class="animate-spin h-4 w-4 text-blue-500"
