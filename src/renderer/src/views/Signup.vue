@@ -2,6 +2,33 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import db, { User, AppConfig, initUserSession, getWorkDB } from '../database/pouch'
+import { TrendingUp, CheckCircle2, Users, ArrowRight } from 'lucide-vue-next'
+import { PhShieldCheckered, PhChartLineUp, PhCoins } from '@phosphor-icons/vue'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler
+} from 'chart.js'
+import { Bar } from 'vue-chartjs'
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler
+)
 
 const router = useRouter()
 
@@ -141,6 +168,125 @@ const fetchAddressByCep = async (): Promise<void> => {
 
 const isLoading = ref(false)
 const error = ref('')
+
+// Lógica do Carrossel de autoridade
+const currentSlide = ref(0)
+const slides = [
+  {
+    id: 1,
+    title: 'Escale sem o peso da',
+    highlight: 'Bitributação.',
+    icon: PhCoins,
+    description:
+      'A escalabilidade do seu modelo de negócio não deve ser limitada por impostos desnecessários. No modelo tradicional, você tributa o faturamento bruto — inclusive o que repassa. Com o CCA. Split, você opera um hub onde a divisão acontece na fonte, protegendo sua margem real.',
+    type: 'chart-economy'
+  },
+  {
+    id: 2,
+    title: 'Proteja sua margem com',
+    highlight: 'Inteligência.',
+    icon: PhChartLineUp,
+    description:
+      'Não permita que a complexidade operacional drene sua lucratividade. Com a automação obrigatória, cada real da sua operação é rastreado e protegido. Elimine erros manuais e tenha o controle absoluto da saúde financeira do seu Hub em um só lugar.',
+    type: 'chart-performance-apex'
+  },
+  {
+    id: 3,
+    title: 'Gestão de Especialistas',
+    highlight: 'Blindada.',
+    icon: PhShieldCheckered,
+    description:
+      'Garanta segurança jurídica absoluta para sua rede de especialistas parceiros. Nossa estrutura foi desenhada para facilitar o compliance e a transparência total na relação entre Empresa, Parceiro e Cliente Final.',
+    type: 'benefits'
+  }
+]
+
+// Configurações ApexCharts (Possibilidade Adicional)
+const apexPerformanceOptions = {
+  chart: {
+    type: 'area',
+    toolbar: { show: false },
+    sparkline: { enabled: true }
+  },
+  stroke: { curve: 'smooth', width: 3, colors: ['#facc15'] },
+  fill: {
+    type: 'gradient',
+    gradient: {
+      shadeIntensity: 1,
+      opacityFrom: 0.45,
+      opacityTo: 0.05,
+      stops: [20, 100, 100, 100]
+    }
+  },
+  tooltip: { enabled: false },
+  colors: ['#facc15']
+}
+
+const apexPerformanceSeries = [
+  {
+    name: 'Lucratividade',
+    data: [31, 40, 28, 51, 42, 109, 100]
+  }
+]
+
+// Configurações dos Gráficos
+const economyChartData = {
+  labels: ['Tradicional', 'CCA. Split'],
+  datasets: [
+    {
+      label: 'Carga Tributária',
+      data: [85, 40],
+      backgroundColor: ['rgba(148, 163, 184, 0.2)', 'rgba(250, 204, 21, 0.9)'],
+      borderRadius: 12,
+      borderWidth: 0,
+      barThickness: 45
+    }
+  ]
+}
+
+const economyChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false }
+  },
+  scales: {
+    y: { display: false, grid: { display: false } },
+    x: {
+      grid: { display: false },
+      ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' as const } }
+    }
+  }
+}
+
+let slideInterval: ReturnType<typeof setInterval> | null = null
+
+const startSlideShow = (): void => {
+  slideInterval = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % slides.length
+  }, 10000)
+}
+
+const stopSlideShow = (): void => {
+  if (slideInterval) clearInterval(slideInterval)
+}
+
+const setSlide = (index: number): void => {
+  currentSlide.value = index
+  stopSlideShow()
+  startSlideShow()
+}
+
+import { onMounted, onUnmounted } from 'vue'
+
+onMounted(() => {
+  startSlideShow()
+})
+
+onUnmounted(() => {
+  stopSlideShow()
+})
 
 const handleSignup = async (): Promise<void> => {
   isLoading.value = true
@@ -637,11 +783,14 @@ const onCepInput = (e: Event): void => {
             <button
               v-if="currentStep < 3"
               type="button"
-              :disabled="isCheckingCpf"
-              class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 disabled:opacity-70"
+              class="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 outline-none"
+              :disabled="isLoading"
               @click="nextStep"
             >
-              <span v-if="!isCheckingCpf">Próximo Passo</span>
+              <span v-if="!isLoading" class="flex items-center gap-2">
+                Próximo Passo
+                <ArrowRight :size="20" />
+              </span>
               <span v-else class="flex items-center gap-2">
                 <svg
                   class="animate-spin h-5 w-5 text-white"
@@ -744,79 +893,135 @@ const onCepInput = (e: Event): void => {
       ></div>
 
       <div class="relative z-10 w-full flex flex-col justify-center px-16 xl:px-24">
-        <div class="max-w-lg">
-          <div class="w-12 h-1 bg-blue-500 mb-8 rounded-full"></div>
-          <h3 class="text-4xl xl:text-5xl font-bold text-white leading-tight">
-            Escale sem o peso da <br />
-            <span class="text-blue-400">Bitributação.</span>
-          </h3>
-          <p class="text-slate-400 mt-6 text-lg leading-relaxed font-medium">
-            A escalabilidade do seu modelo de negócio não deve ser limitada por impostos
-            desnecessários. No modelo tradicional, você tributa o faturamento bruto — inclusive o
-            que repassa. Com a inteligência do <strong>CCA. Split</strong>, você opera um hub
-            eficiente onde a divisão acontece na fonte, protegendo sua margem real e garantindo
-            segurança jurídica absoluta para sua rede de especialistas parceiros.
-          </p>
+        <div class="max-w-lg min-h-[500px] flex flex-col justify-center">
+          <div class="w-12 h-1 bg-blue-500 mb-6 rounded-full"></div>
 
-          <div class="mt-12 space-y-8">
-            <!-- Mini Infográfico de Economia -->
-            <div class="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-6 backdrop-blur-sm">
-              <div class="flex justify-between items-end gap-4 mb-4">
-                <div class="flex-1">
-                  <div class="h-24 w-full bg-slate-800 rounded-lg relative overflow-hidden group">
+          <transition-group name="slide-fade" mode="out-in">
+            <div :key="currentSlide" class="space-y-8">
+              <div class="space-y-4">
+                <div
+                  class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 mb-6 border border-blue-500/20"
+                >
+                  <component :is="slides[currentSlide].icon" :size="32" stroke-width="1.5" />
+                </div>
+                <h3 class="text-3xl xl:text-4xl font-bold text-white leading-tight tracking-tight">
+                  {{ slides[currentSlide].title }} <br />
+                  <span class="text-blue-400 font-black italic">{{
+                    slides[currentSlide].highlight
+                  }}</span>
+                </h3>
+                <p class="text-slate-300 text-base leading-relaxed font-medium max-w-md">
+                  {{ slides[currentSlide].description }}
+                </p>
+              </div>
+
+              <!-- Conteúdo Visual Dinâmico por Slide (Upgrade Chart.js) -->
+              <div v-if="slides[currentSlide].type === 'chart-economy'" class="space-y-4">
+                <div
+                  class="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-6 backdrop-blur-xl shadow-2xl"
+                >
+                  <div class="h-48 w-full">
+                    <Bar :data="economyChartData" :options="economyChartOptions" />
+                  </div>
+                  <div class="mt-6 pt-6 border-t border-slate-700/50 flex items-center gap-3">
                     <div
-                      class="absolute bottom-0 left-0 w-full bg-red-500/40 transition-all h-[85%]"
-                    ></div>
-                    <div
-                      class="absolute top-2 left-2 text-[9px] font-bold text-slate-400 uppercase"
+                      class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400"
                     >
-                      Tradicional
+                      <TrendingUp :size="18" />
                     </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                      Economia média de
+                      <span class="text-emerald-400 font-bold">15% a 35%</span> na carga tributária
+                      total da operação.
+                    </p>
                   </div>
-                  <p class="text-[10px] text-slate-500 mt-2 text-center font-bold">BITRIBUTAÇÃO</p>
-                </div>
-                <div class="flex-1">
-                  <div class="h-24 w-full bg-slate-800 rounded-lg relative overflow-hidden">
-                    <div
-                      class="absolute bottom-0 left-0 w-full bg-blue-500/60 transition-all h-[40%]"
-                    ></div>
-                    <div class="absolute top-2 left-2 text-[9px] font-bold text-blue-400 uppercase">
-                      CCA. Split
-                    </div>
-                  </div>
-                  <p class="text-[10px] text-blue-500 mt-2 text-center font-bold">LUCRO REAL</p>
                 </div>
               </div>
-              <p class="text-xs text-slate-400 text-center leading-relaxed">
-                Economia média de <span class="text-emerald-400 font-bold">15% a 35%</span> na carga
-                tributária total da operação.
-              </p>
-            </div>
 
-            <div class="space-y-6">
-              <div class="flex items-center gap-4 text-slate-300">
+              <div v-if="slides[currentSlide].type === 'chart-performance-apex'" class="space-y-4">
                 <div
-                  class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"
+                  class="bg-blue-600/5 border border-blue-500/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden"
                 >
-                  ✓
+                  <div
+                    class="absolute top-0 right-0 p-4 opacity-10 text-blue-400 rotate-12 transform scale-150"
+                  >
+                    <component :is="slides[currentSlide].icon" :size="120" weight="thin" />
+                  </div>
+                  <div class="flex items-center justify-between mb-8">
+                    <div class="space-y-1">
+                      <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
+                        Lucratividade Média (Apex)
+                      </p>
+                      <p class="text-3xl font-black text-white">+24.8%</p>
+                    </div>
+                  </div>
+                  <div class="h-32 w-full">
+                    <apexchart
+                      width="100%"
+                      height="100%"
+                      :options="apexPerformanceOptions"
+                      :series="apexPerformanceSeries"
+                    ></apexchart>
+                  </div>
+                  <div class="mt-6 pt-6 border-t border-blue-500/10 space-y-3">
+                    <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 w-[75%] rounded-full animate-pulse"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 flex justify-between font-bold">
+                      <span>MÁXIMA POSSIBILIDADE</span>
+                      <span>ALTO DESEMPENHO</span>
+                    </p>
+                  </div>
                 </div>
-                <p class="text-sm leading-relaxed">
-                  <strong>Blindagem Fiscal:</strong> Estrutura jurídica desenhada para evitar a
-                  bitributação em repasses de honorários.
-                </p>
               </div>
-              <div class="flex items-center gap-4 text-slate-300">
+
+              <div v-if="slides[currentSlide].type === 'benefits'" class="space-y-6">
                 <div
-                  class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"
+                  class="group flex items-start gap-5 p-4 rounded-2xl bg-slate-800/20 border border-transparent hover:border-blue-500/20 transition-all"
                 >
-                  ✓
+                  <div
+                    class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"
+                  >
+                    <CheckCircle2 :size="20" />
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-white font-bold">Blindagem Fiscal</p>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                      Estrutura jurídica desenhada para evitar a bitributação em repasses de
+                      honorários.
+                    </p>
+                  </div>
                 </div>
-                <p class="text-sm leading-relaxed">
-                  <strong>Gestão de Talentos:</strong> Monitoramento em tempo real de produtividade
-                  e repasses para sua rede PJ/PF.
-                </p>
+                <div
+                  class="group flex items-start gap-5 p-4 rounded-2xl bg-slate-800/20 border border-transparent hover:border-blue-500/20 transition-all"
+                >
+                  <div
+                    class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"
+                  >
+                    <Users :size="20" />
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-white font-bold">Gestão de Talentos</p>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                      Monitoramento em tempo real de produtividade e repasses para sua rede PJ/PF.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
+          </transition-group>
+
+          <!-- Indicadores do Carrossel -->
+          <div class="mt-12 flex gap-3">
+            <button
+              v-for="(_, index) in slides"
+              :key="index"
+              class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+              :class="
+                currentSlide === index ? 'bg-blue-500 w-8' : 'bg-slate-700 hover:bg-slate-600'
+              "
+              @click="setSlide(index)"
+            ></button>
           </div>
         </div>
       </div>
@@ -942,8 +1147,23 @@ input:-webkit-autofill:focus {
   transition: opacity 0.3s ease;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+/* Animações do Carrossel */
+.slide-fade-enter-active {
+  transition: all 0.6s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.6s ease-in;
+  position: absolute;
+}
+
+.slide-fade-enter-from {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.slide-fade-leave-to {
+  transform: translateY(-20px);
   opacity: 0;
 }
 </style>
