@@ -18,6 +18,10 @@ export interface User extends BaseDoc {
   passwordHash: string
   role: 'admin' | 'accountant' | 'clerk'
   status: 'active' | 'inactive'
+  asaasCustomerId?: string
+  asaasSubscriptionId?: string
+  asaasInvoiceUrl?: string
+  paymentStatus?: 'pending' | 'paid' | 'overdue'
 }
 
 export interface Client extends BaseDoc {
@@ -66,32 +70,17 @@ export interface AppConfig extends BaseDoc {
 // Instância do Banco de Dados
 const db = new PouchDB('cca_contabil_db')
 
-// Inicialização (Seed)
+// Inicialização (Vazia para banco limpo)
 export const initializeDB = async (): Promise<void> => {
-  try {
-    const adminId = 'user:admin@cca.com'
-    try {
-      await db.get(adminId)
-    } catch (err: unknown) {
-      if ((err as { status: number }).status === 404) {
-        const adminUser: User = {
-          _id: adminId,
-          type: 'user',
-          name: 'Administrador',
-          email: 'admin@cca.com',
-          passwordHash: 'admin123', // Em um app real, usaríamos bcrypt/argon2
-          role: 'admin',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-        await db.put(adminUser)
-        console.log('Admin user created defaults')
-      }
-    }
-  } catch (error) {
-    console.error('Error initializing database:', error)
+  // Reset único do banco de dados solicitado pelo usuário
+  if (!localStorage.getItem('db_reset_done')) {
+    console.log('Zerando banco de dados para novos testes...')
+    await db.destroy()
+    localStorage.setItem('db_reset_done', 'true')
+    window.location.reload()
+    return
   }
+  console.log('Database initialized (clean)')
 }
 
 // Helper para gerar IDs consistentes

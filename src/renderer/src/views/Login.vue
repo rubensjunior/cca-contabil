@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 import db, { initializeDB, User } from '../database/pouch'
 
 const router = useRouter()
-const email = ref('admin@cca.com')
-const password = ref('admin123')
+const email = ref('')
+const password = ref('')
 const isLoading = ref(false)
 const error = ref('')
 

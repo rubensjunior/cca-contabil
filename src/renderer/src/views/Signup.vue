@@ -53,6 +53,10 @@ const states = [
   'TO'
 ]
 
+const isValidEmail = (e: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+}
+
 const currentStep = ref(1)
 
 const nextStep = (): void => {
@@ -61,6 +65,10 @@ const nextStep = (): void => {
   if (currentStep.value === 1) {
     if (!name.value || !email.value || !password.value) {
       error.value = 'Preencha os dados de acesso para continuar.'
+      return
+    }
+    if (!isValidEmail(email.value)) {
+      error.value = 'Por favor, insira um e-mail válido.'
       return
     }
   }
@@ -129,7 +137,8 @@ const handleSignup = async (): Promise<void> => {
       role: 'admin',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      paymentStatus: 'pending'
     }
 
     // 3. Criar Documento de Configuração do Escritório
@@ -161,11 +170,36 @@ const handleSignup = async (): Promise<void> => {
       createdAt: currentConfig.createdAt || new Date().toISOString()
     }
 
-    // 4. Salvar no Banco
+    // 4. Salvar no Banco (Temporário sem asaas fields para garantir criação)
     await db.put(newUser)
     await db.put(newConfig)
 
-    // 5. Iniciar Sessão
+    // 5. Integração com Asaas
+    const asaasResult = await window.api.asaas.setupPayment({
+      name: name.value,
+      email: email.value,
+      cpfCnpj: cpfCnpj.value,
+      mobilePhone: phone.value
+    })
+
+    if (!asaasResult.success) {
+      // Se falhar o Asaas, ainda assim salvamos o user mas exibimos erro para tentar novamente depois ou entrar em contato
+      error.value =
+        'Cadastro realizado, mas houve um erro ao gerar a cobrança: ' + asaasResult.error
+      isLoading.value = false
+      return
+    }
+
+    // 6. Atualizar usuário com dados do Asaas
+    const updatedUser = await db.get<User>(userId)
+    await db.put({
+      ...updatedUser,
+      asaasCustomerId: asaasResult.customerId,
+      asaasSubscriptionId: asaasResult.subscriptionId,
+      asaasInvoiceUrl: asaasResult.invoiceUrl
+    })
+
+    // 7. Iniciar Sessão
     localStorage.setItem(
       'cca_session',
       JSON.stringify({
@@ -173,12 +207,15 @@ const handleSignup = async (): Promise<void> => {
         name: newUser.name,
         role: newUser.role,
         email: newUser.email,
-        office: officeName.value
+        office: officeName.value,
+        subscriptionId: asaasResult.subscriptionId,
+        invoiceUrl: asaasResult.invoiceUrl,
+        paymentStatus: 'pending'
       })
     )
 
-    // 6. Redirecionar
-    router.push('/dashboard')
+    // 8. Redirecionar para Checkout
+    router.push('/checkout')
   } catch (err: unknown) {
     console.error('Erro no cadastro:', err)
     error.value = 'Não foi possível realizar o cadastro. Tente novamente.'
@@ -267,226 +304,237 @@ const onCepInput = (e: Event): void => {
             {{ error }}
           </div>
 
-          <!-- Step 1: Dados de Acesso -->
-          <TransitionGroup
-            name="list"
-            tag="div"
-            class="col-span-full grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"
-          >
-            <template v-if="currentStep === 1">
-              <div key="name" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Nome Completo</label
-                >
-                <input
-                  v-model="name"
-                  type="text"
-                  required
-                  placeholder="Ex: João Silva"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
-
-              <div key="email" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >E-mail Corporativo</label
-                >
-                <input
-                  v-model="email"
-                  type="email"
-                  required
-                  placeholder="seu@email.com"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
-
-              <div key="password" class="space-y-2 col-span-full">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Senha de Acesso</label
-                >
-                <input
-                  v-model="password"
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
-            </template>
-
-            <!-- Step 2: Dados do Escritório -->
-            <template v-if="currentStep === 2">
-              <div key="office" class="space-y-2 col-span-full">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Nome do Escritório</label
-                >
-                <input
-                  v-model="officeName"
-                  type="text"
-                  required
-                  placeholder="Ex: Escritório ABC"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
-
-              <div key="doc" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >CPF ou CNPJ</label
-                >
-                <input
-                  v-model="cpfCnpj"
-                  type="text"
-                  required
-                  placeholder="000.000.000-00"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                  @input="onCpfCnpjInput"
-                />
-              </div>
-
-              <div key="phone" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >WhatsApp</label
-                >
-                <input
-                  v-model="phone"
-                  type="text"
-                  required
-                  placeholder="(00) 00000-0000"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                  @input="onPhoneInput"
-                />
-              </div>
-            </template>
-
-            <!-- Step 3: Endereço -->
-            <template v-if="currentStep === 3">
-              <div key="cep" class="space-y-2 relative">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >CEP</label
-                >
-                <div class="relative">
+          <!-- Step Contents -->
+          <div class="col-span-full relative">
+            <Transition name="step-fade" mode="out-in">
+              <!-- Step 1: Dados de Acesso -->
+              <div
+                v-if="currentStep === 1"
+                key="step-1"
+                class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"
+              >
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Nome Completo</label
+                  >
                   <input
-                    v-model="cep"
+                    v-model="name"
                     type="text"
                     required
-                    placeholder="00000-000"
+                    placeholder="Ex: João Silva"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                    @input="onCepInput"
-                    @blur="fetchAddressByCep"
                   />
+                </div>
 
-                  <div v-if="isSearchingCep" class="absolute right-4 top-1/2 -translate-y-1/2">
-                    <svg
-                      class="animate-spin h-4 w-4 text-blue-500"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >E-mail Corporativo</label
+                  >
+                  <input
+                    v-model="email"
+                    type="email"
+                    required
+                    placeholder="seu@email.com"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2 col-span-full">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Senha de Acesso</label
+                  >
+                  <input
+                    v-model="password"
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
                 </div>
               </div>
 
-              <div key="street" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Logradouro</label
-                >
-                <input
-                  v-model="street"
-                  type="text"
-                  required
-                  placeholder="Rua, Avenida, etc."
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
+              <!-- Step 2: Dados do Escritório -->
+              <div
+                v-else-if="currentStep === 2"
+                key="step-2"
+                class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"
+              >
+                <div class="space-y-2 col-span-full">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Nome do Escritório</label
+                  >
+                  <input
+                    v-model="officeName"
+                    type="text"
+                    required
+                    placeholder="Ex: Escritório ABC"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >CPF ou CNPJ</label
+                  >
+                  <input
+                    v-model="cpfCnpj"
+                    type="text"
+                    required
+                    placeholder="000.000.000-00"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    @input="onCpfCnpjInput"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >WhatsApp</label
+                  >
+                  <input
+                    v-model="phone"
+                    type="text"
+                    required
+                    placeholder="(00) 00000-0000"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                    @input="onPhoneInput"
+                  />
+                </div>
               </div>
 
-              <div key="number" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Número</label
-                >
-                <input
-                  v-model="number"
-                  type="text"
-                  required
-                  placeholder="123"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
+              <!-- Step 3: Endereço -->
+              <div
+                v-else-if="currentStep === 3"
+                key="step-3"
+                class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"
+              >
+                <div class="space-y-2 relative">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >CEP</label
+                  >
+                  <div class="relative">
+                    <input
+                      v-model="cep"
+                      type="text"
+                      required
+                      placeholder="00000-000"
+                      class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                      @input="onCepInput"
+                      @blur="fetchAddressByCep"
+                    />
 
-              <div key="complement" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Complemento</label
-                >
-                <input
-                  v-model="complement"
-                  type="text"
-                  placeholder="Opcional"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
+                    <div v-if="isSearchingCep" class="absolute right-4 top-1/2 -translate-y-1/2">
+                      <svg
+                        class="animate-spin h-4 w-4 text-blue-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        ></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
 
-              <div key="neighborhood" class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Bairro</label
-                >
-                <input
-                  v-model="neighborhood"
-                  type="text"
-                  required
-                  placeholder="Centro"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Logradouro</label
+                  >
+                  <input
+                    v-model="street"
+                    type="text"
+                    required
+                    placeholder="Rua, Avenida, etc."
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
 
-              <div key="city" class="space-y-2 md:col-span-1">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Cidade</label
-                >
-                <input
-                  v-model="city"
-                  type="text"
-                  required
-                  placeholder="São Paulo"
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
-                />
-              </div>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Número</label
+                  >
+                  <input
+                    v-model="number"
+                    type="text"
+                    required
+                    placeholder="123"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
 
-              <div key="state" class="space-y-2 md:col-span-1">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                  >Estado (UF)</label
-                >
-                <select
-                  v-model="state"
-                  required
-                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all appearance-none cursor-pointer pr-10"
-                  :style="{
-                    backgroundImage: `url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E&quot;)`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1rem'
-                  }"
-                >
-                  <option value="" disabled selected>UF</option>
-                  <option v-for="uf in states" :key="uf" :value="uf">
-                    {{ uf }}
-                  </option>
-                </select>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Complemento</label
+                  >
+                  <input
+                    v-model="complement"
+                    type="text"
+                    placeholder="Opcional"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Bairro</label
+                  >
+                  <input
+                    v-model="neighborhood"
+                    type="text"
+                    required
+                    placeholder="Centro"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2 md:col-span-1">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Cidade</label
+                  >
+                  <input
+                    v-model="city"
+                    type="text"
+                    required
+                    placeholder="São Paulo"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2 md:col-span-1">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Estado (UF)</label
+                  >
+                  <select
+                    v-model="state"
+                    required
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all appearance-none cursor-pointer pr-10"
+                    :style="{
+                      backgroundImage: `url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E&quot;)`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 1rem center',
+                      backgroundSize: '1rem'
+                    }"
+                  >
+                    <option value="" disabled selected>UF</option>
+                    <option v-for="uf in states" :key="uf" :value="uf">
+                      {{ uf }}
+                    </option>
+                  </select>
+                </div>
               </div>
-            </template>
-          </TransitionGroup>
+            </Transition>
+          </div>
 
           <!-- Navegação -->
           <div class="col-span-full pt-4 flex gap-4">
@@ -718,17 +766,19 @@ const onCepInput = (e: Event): void => {
 }
 
 /* Transitions para as etapas */
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.5s ease;
+.step-fade-enter-active,
+.step-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.list-enter-from {
+
+.step-fade-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateY(10px);
 }
-.list-leave-to {
+
+.step-fade-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateY(-10px);
 }
 
 input:-webkit-autofill,

@@ -11,7 +11,11 @@ interface UserSession {
   role: string
   email: string
   office?: string
+  subscriptionId?: string
 }
+
+const isCancelling = ref(false)
+const cancelError = ref('')
 
 const user = ref<UserSession | null>(null)
 const config = ref<AppConfig | null>(null)
@@ -34,6 +38,32 @@ onMounted(async () => {
     console.warn('Config não encontrada')
   }
 })
+
+const handleCancelSubscription = async (): Promise<void> => {
+  if (!user.value?.subscriptionId) return
+  const confirmed = confirm(
+    'Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso ao sistema imediatamente após o cancelamento.'
+  )
+  if (!confirmed) return
+
+  isCancelling.value = true
+  cancelError.value = ''
+
+  try {
+    const result = await window.api.asaas.cancelSubscription(user.value.subscriptionId)
+    if (result.success) {
+      alert('Assinatura cancelada com sucesso.')
+      handleLogout()
+    } else {
+      cancelError.value = 'Erro ao cancelar: ' + result.error
+    }
+  } catch (err) {
+    console.error(err)
+    cancelError.value = 'Ocorreu um erro inesperado.'
+  } finally {
+    isCancelling.value = false
+  }
+}
 </script>
 
 <template>
@@ -133,15 +163,50 @@ onMounted(async () => {
         <div class="flex gap-4">
           <div class="bg-white border border-slate-200 px-4 py-3 rounded-2xl shadow-sm">
             <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">
-              Status Asaas
+              Plano Profissional
             </p>
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-slate-300"></div>
-              <p class="text-sm font-bold text-slate-600">Desconectado</p>
+              <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <p class="text-sm font-bold text-slate-900">Ativo</p>
             </div>
           </div>
+          <button
+            :disabled="isCancelling"
+            class="bg-white border border-red-100 hover:bg-red-50 text-red-600 px-4 py-3 rounded-2xl shadow-sm text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+            @click="handleCancelSubscription"
+          >
+            <svg
+              v-if="isCancelling"
+              class="animate-spin h-3 w-3"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Cancelar Assinatura
+          </button>
         </div>
       </header>
+
+      <div
+        v-if="cancelError"
+        class="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium animate-shake"
+      >
+        {{ cancelError }}
+      </div>
 
       <div class="grid grid-cols-3 gap-6">
         <!-- Stats Cards -->

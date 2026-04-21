@@ -9,6 +9,27 @@ declare global {
       minimize: () => void
       maximize: () => void
       close: () => void
+      asaas: {
+        setupPayment: (data: {
+          name: string
+          email: string
+          cpfCnpj: string
+          mobilePhone: string
+        }) => Promise<{
+          success: boolean
+          customerId?: string
+          subscriptionId?: string
+          invoiceUrl?: string
+          error?: string
+        }>
+        getSubscriptionStatus: (id: string) => Promise<{
+          success: boolean
+          status?: string
+          invoiceUrl?: string
+          error?: string
+        }>
+        cancelSubscription: (id: string) => Promise<{ success: boolean; error?: string }>
+      }
     }
   }
 }

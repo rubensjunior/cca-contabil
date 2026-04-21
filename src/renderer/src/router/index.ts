@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Signup from '../views/Signup.vue'
 import Dashboard from '../views/Dashboard.vue'
+import Checkout from '../views/Checkout.vue'
 
 import { routerState } from './routerState'
 
@@ -24,6 +25,12 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true, requiresPayment: true }
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: Checkout,
     meta: { requiresAuth: true }
   }
 ]
@@ -42,6 +49,15 @@ router.beforeEach((to, _from, next) => {
     next('/login')
   } else if (to.path === '/login' && session) {
     next('/dashboard')
+  } else if (to.meta.requiresPayment && session) {
+    const sessionData = JSON.parse(session)
+    // Redirecionar para checkout se o pagamento for pendente (baseado na sessão inicial)
+    // Em um app real, verificaríamos o status atualizado no banco/API
+    if (sessionData.paymentStatus === 'pending' || !sessionData.isPaid) {
+      next('/checkout')
+    } else {
+      next()
+    }
   } else {
     next()
   }

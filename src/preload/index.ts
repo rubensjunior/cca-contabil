@@ -7,7 +7,13 @@ const api = {
   getVersion: () => ipcRenderer.invoke('get-app-version'),
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
-  close: () => ipcRenderer.send('window-close')
+  close: () => ipcRenderer.send('window-close'),
+  asaas: {
+    setupPayment: (data: { name: string; email: string; cpfCnpj: string; mobilePhone: string }) =>
+      ipcRenderer.invoke('asaas:setup-payment', data),
+    getSubscriptionStatus: (id: string) => ipcRenderer.invoke('asaas:get-subscription-status', id),
+    cancelSubscription: (id: string) => ipcRenderer.invoke('asaas:cancel-subscription', id)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { AsaasService } from './services/asaas.service'
 
 function createWindow(): void {
   // Create the browser window.
@@ -41,6 +42,56 @@ function createWindow(): void {
 
   ipcMain.handle('get-app-version', () => {
     return app.getVersion()
+  })
+
+  // Asaas Handlers
+  ipcMain.handle(
+    'asaas:setup-payment',
+    async (_, data: { name: string; email: string; cpfCnpj: string; mobilePhone: string }) => {
+      try {
+        // 1. Procurar ou criar cliente
+        let customer = await AsaasService.findCustomerByCpfCnpj(data.cpfCnpj)
+        if (!customer) {
+          customer = await AsaasService.createCustomer({
+            name: data.name,
+            email: data.email,
+            cpfCnpj: data.cpfCnpj,
+            mobilePhone: data.mobilePhone
+          })
+        }
+
+        // 2. Criar assinatura
+        const subscription = await AsaasService.createSubscription(customer.id)
+
+        return {
+          success: true,
+          customerId: customer.id,
+          subscriptionId: subscription.id,
+          invoiceUrl: subscription.invoiceUrl || subscription.checkoutUrl
+        }
+      } catch (err) {
+        console.error('Erro Asaas Setup:', err)
+        return { success: false, error: err instanceof Error ? err.message : String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle('asaas:get-subscription-status', async (_, subscriptionId: string) => {
+    try {
+      const sub = await AsaasService.getSubscription(subscriptionId)
+      return { success: true, status: sub.status, invoiceUrl: sub.invoiceUrl }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  ipcMain.handle('asaas:cancel-subscription', async (_, subscriptionId: string) => {
+    try {
+      await AsaasService.cancelSubscription(subscriptionId)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
   })
 
   mainWindow.on('ready-to-show', () => {
