@@ -78,7 +78,7 @@ const handleLogin = async (): Promise<void> => {
             </h1>
           </div>
           <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Bem-vindo de volta</h2>
-          <p class="text-slate-500 mt-1">Acesse sua plataforma de contabilidade digital</p>
+          <p class="text-slate-500 mt-1">Acesse sua plataforma de gestão colaborativa</p>
         </div>
 
         <form class="space-y-6" @submit.prevent="handleLogin">
@@ -174,7 +174,7 @@ const handleLogin = async (): Promise<void> => {
         </p>
         <div class="flex items-center gap-8 opacity-80 hover:opacity-100 transition-opacity">
           <div class="flex flex-col items-center">
-            <span class="text-xs font-black text-slate-900 tracking-tight">CCA CONTABILIDADE</span>
+            <span class="text-xs font-black text-slate-900 tracking-tight">HUB DE NEGÓCIOS</span>
           </div>
           <div class="w-px h-4 bg-slate-200"></div>
           <div class="flex flex-col items-center">
@@ -200,25 +200,65 @@ const handleLogin = async (): Promise<void> => {
         <div class="max-w-lg">
           <div class="w-12 h-1 bg-blue-500 mb-8 rounded-full"></div>
           <h3 class="text-4xl xl:text-5xl font-bold text-white leading-tight">
-            Gestão inteligente para sua <br />
-            <span class="text-blue-400">contabilidade digital.</span>
+            Proteja sua margem com <br />
+            <span class="text-blue-400">Inteligência Operacional.</span>
           </h3>
-          <p class="text-slate-400 mt-6 text-lg leading-relaxed">
-            Controle cobranças, automatize splits de pagamentos e gerencie seu escritório com a
-            eficiência que a tecnologia proporciona.
+          <p class="text-slate-400 mt-6 text-lg leading-relaxed font-medium">
+            Não permita que a complexidade dos repasses drene sua lucratividade bruta. O
+            <strong>CCA. Split</strong> oferece o monitoramento em tempo real e a automação
+            obrigatória para que cada real da sua operação seja rastreado e protegido. Elimine erros
+            manuais e tenha o controle absoluto da saúde financeira do seu Hub em um só lugar.
           </p>
 
-          <div class="mt-12 grid grid-cols-2 gap-8">
+          <!-- Mini Dashboard Preview -->
+          <div
+            class="mt-12 bg-blue-600/10 border border-blue-500/20 rounded-3xl p-6 relative overflow-hidden"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <div class="space-y-1">
+                <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
+                  Lucratividade Média
+                </p>
+                <p class="text-2xl font-bold text-white">+24.8%</p>
+              </div>
+              <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
+                <svg
+                  class="w-6 h-6 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 w-[75%] rounded-full animate-pulse"></div>
+              </div>
+              <p class="text-[10px] text-slate-500 flex justify-between font-bold">
+                <span>EFICIÊNCIA TRIBUTÁRIA</span>
+                <span>75% ALCANÇADO</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-8 grid grid-cols-2 gap-8 outline-none">
             <div class="space-y-2">
-              <div class="text-blue-400 font-bold text-2xl">99.9%</div>
+              <div class="text-blue-400 font-bold text-2xl">Blindagem</div>
               <div class="text-slate-500 text-xs uppercase tracking-widest font-semibold">
-                Disponibilidade
+                Fiscal & Tributária
               </div>
             </div>
             <div class="space-y-2">
-              <div class="text-blue-400 font-bold text-2xl">24/7</div>
+              <div class="text-blue-400 font-bold text-2xl">Split</div>
               <div class="text-slate-500 text-xs uppercase tracking-widest font-semibold">
-                Monitoramento
+                Direto na Fonte
               </div>
             </div>
           </div>

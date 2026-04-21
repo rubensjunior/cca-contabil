@@ -1,7 +1,7 @@
 import PouchDB from 'pouchdb'
 
 // Tipos de Documentos
-export type DocType = 'user' | 'client' | 'accountant' | 'contract' | 'payment' | 'config'
+export type DocType = 'user' | 'client' | 'partner' | 'contract' | 'payment' | 'config'
 
 export interface BaseDoc {
   _id: string
@@ -16,7 +16,7 @@ export interface User extends BaseDoc {
   name: string
   email: string
   passwordHash: string
-  role: 'admin' | 'accountant' | 'clerk'
+  role: 'admin' | 'partner' | 'clerk'
   status: 'active' | 'inactive'
   tenantId: string // ID imutável para vincular ao banco de dados do escritório
   asaasCustomerId?: string
@@ -34,8 +34,8 @@ export interface Client extends BaseDoc {
   asaasCustomerId?: string
 }
 
-export interface Accountant extends BaseDoc {
-  type: 'accountant'
+export interface Partner extends BaseDoc {
+  type: 'partner'
   name: string
   cpfCnpj: string
   email: string
@@ -45,16 +45,16 @@ export interface Accountant extends BaseDoc {
 export interface Contract extends BaseDoc {
   type: 'contract'
   clientId: string
-  accountantId: string
-  officePercentage: number
-  accountantPercentage: number
+  partnerId: string
+  hubPercentage: number
+  partnerPercentage: number
   status: 'active' | 'inactive'
 }
 
 export interface AppConfig extends BaseDoc {
   type: 'config'
   asaasApiKey?: string
-  officeName?: string
+  companyName?: string
   cnpj?: string
   phone?: string
   address?: {

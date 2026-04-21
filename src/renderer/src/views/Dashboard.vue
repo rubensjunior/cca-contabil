@@ -10,7 +10,7 @@ interface UserSession {
   name: string
   role: string
   email: string
-  office?: string
+  company?: string
   subscriptionId?: string
 }
 
@@ -82,7 +82,7 @@ const handleCancelSubscription = async (): Promise<void> => {
           class="p-3 bg-blue-50 text-blue-700 rounded-xl font-bold border border-blue-100 flex items-center gap-3 transition-all"
         >
           <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-          Dashboard
+          Panorama Geral
         </div>
         <div
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
@@ -94,13 +94,13 @@ const handleCancelSubscription = async (): Promise<void> => {
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
         >
           <div class="w-1.5 h-6 bg-transparent"></div>
-          Contadores
+          Time de Especialistas
         </div>
         <div
           class="p-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-colors cursor-not-allowed opacity-50 flex items-center gap-3"
         >
           <div class="w-1.5 h-6 bg-transparent"></div>
-          Pagamentos
+          Gestão de Repasses
         </div>
       </nav>
 
@@ -143,7 +143,7 @@ const handleCancelSubscription = async (): Promise<void> => {
           class="mt-6 text-[9px] uppercase tracking-wider text-slate-400 text-center font-medium leading-relaxed"
         >
           Powered by<br />
-          <span class="text-slate-500 font-bold">CCA Contabilidade e RKS Tech Solution</span>
+          <span class="text-slate-500 font-bold">HUB DE NEGÓCIOS e RKS Tech Solution</span>
         </div>
       </div>
     </aside>
@@ -154,9 +154,9 @@ const handleCancelSubscription = async (): Promise<void> => {
         <div>
           <h2 class="text-3xl font-bold text-slate-900">Olá, {{ user?.name }}</h2>
           <p class="text-slate-500 mt-1">
-            Escritório:
+            Organização:
             <span class="text-blue-600 font-bold">{{
-              config?.officeName || 'Não configurado'
+              config?.companyName || 'Não configurado'
             }}</span>
           </p>
         </div>
@@ -265,10 +265,10 @@ const handleCancelSubscription = async (): Promise<void> => {
             />
           </svg>
         </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Inicie configurando um cliente</h3>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Pronto para escalar seu lucro?</h3>
         <p class="text-slate-500 max-w-sm mx-auto mb-8">
-          Para começar a gerenciar os repasses (splits), você precisa cadastrar seus clientes e
-          vincular contadores responsáveis.
+          Comece configurando sua rede de talentos e vincule seus primeiros clientes para
+          automatizar as divisões e proteger sua margem.
         </p>
         <button
           class="bg-slate-100 text-slate-400 px-8 py-3 rounded-xl font-bold transition-all opacity-50 cursor-not-allowed border border-slate-200"

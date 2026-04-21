@@ -6,7 +6,7 @@ import db, { User, AppConfig, initUserSession, getWorkDB } from '../database/pou
 const router = useRouter()
 
 const name = ref('')
-const officeName = ref('')
+const companyName = ref('')
 const cpfCnpj = ref('')
 const phone = ref('')
 const email = ref('')
@@ -101,8 +101,8 @@ const nextStep = (): void => {
     }
   }
   if (currentStep.value === 2) {
-    if (!officeName.value || !cpfCnpj.value || !phone.value) {
-      error.value = 'Preencha os dados do escritório para continuar.'
+    if (!companyName.value || !cpfCnpj.value || !phone.value) {
+      error.value = 'Preencha os dados da empresa para continuar.'
       return
     }
     // Verificação inteligente de CPF
@@ -185,7 +185,7 @@ const handleSignup = async (): Promise<void> => {
     const newConfig: AppConfig = {
       _id: configId,
       type: 'config',
-      officeName: officeName.value,
+      companyName: companyName.value,
       cnpj: cpfCnpj.value,
       phone: phone.value,
       address: {
@@ -239,7 +239,7 @@ const handleSignup = async (): Promise<void> => {
         name: newUser.name,
         role: newUser.role,
         email: newUser.email,
-        office: officeName.value,
+        company: companyName.value,
         subscriptionId: asaasResult.subscriptionId,
         invoiceUrl: asaasResult.invoiceUrl,
         paymentStatus: 'pending'
@@ -448,13 +448,13 @@ const onCepInput = (e: Event): void => {
               >
                 <div class="space-y-2 col-span-full">
                   <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
-                    >Nome do Escritório</label
+                    >Nome do Negócio / Empresa</label
                   >
                   <input
-                    v-model="officeName"
+                    v-model="companyName"
                     type="text"
                     required
-                    placeholder="Ex: Escritório ABC"
+                    placeholder="Ex: Minha Empresa"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-400"
                   />
                 </div>
@@ -721,7 +721,7 @@ const onCepInput = (e: Event): void => {
         </p>
         <div class="flex items-center gap-8 opacity-80 hover:opacity-100 transition-opacity">
           <div class="flex flex-col items-center">
-            <span class="text-xs font-black text-slate-900 tracking-tight">CCA CONTABILIDADE</span>
+            <span class="text-xs font-black text-slate-900 tracking-tight">HUB DE NEGÓCIOS</span>
           </div>
           <div class="w-px h-4 bg-slate-200"></div>
           <div class="flex flex-col items-center">
@@ -747,38 +747,75 @@ const onCepInput = (e: Event): void => {
         <div class="max-w-lg">
           <div class="w-12 h-1 bg-blue-500 mb-8 rounded-full"></div>
           <h3 class="text-4xl xl:text-5xl font-bold text-white leading-tight">
-            Escalabilidade para seu <br />
-            <span class="text-blue-400">escritório contábil.</span>
+            Escale sem o peso da <br />
+            <span class="text-blue-400">Bitributação.</span>
           </h3>
-          <p class="text-slate-400 mt-6 text-lg leading-relaxed">
-            Nossa plataforma foi desenhada para simplificar processos complexos, permitindo que você
-            foque no crescimento dos seus clientes.
+          <p class="text-slate-400 mt-6 text-lg leading-relaxed font-medium">
+            A escalabilidade do seu modelo de negócio não deve ser limitada por impostos
+            desnecessários. No modelo tradicional, você tributa o faturamento bruto — inclusive o
+            que repassa. Com a inteligência do <strong>CCA. Split</strong>, você opera um hub
+            eficiente onde a divisão acontece na fonte, protegendo sua margem real e garantindo
+            segurança jurídica absoluta para sua rede de especialistas parceiros.
           </p>
 
-          <div class="mt-12 space-y-6">
-            <div class="flex items-center gap-4 text-slate-300">
-              <div
-                class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"
-              >
-                ✓
+          <div class="mt-12 space-y-8">
+            <!-- Mini Infográfico de Economia -->
+            <div class="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-6 backdrop-blur-sm">
+              <div class="flex justify-between items-end gap-4 mb-4">
+                <div class="flex-1">
+                  <div class="h-24 w-full bg-slate-800 rounded-lg relative overflow-hidden group">
+                    <div
+                      class="absolute bottom-0 left-0 w-full bg-red-500/40 transition-all h-[85%]"
+                    ></div>
+                    <div
+                      class="absolute top-2 left-2 text-[9px] font-bold text-slate-400 uppercase"
+                    >
+                      Tradicional
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-2 text-center font-bold">BITRIBUTAÇÃO</p>
+                </div>
+                <div class="flex-1">
+                  <div class="h-24 w-full bg-slate-800 rounded-lg relative overflow-hidden">
+                    <div
+                      class="absolute bottom-0 left-0 w-full bg-blue-500/60 transition-all h-[40%]"
+                    ></div>
+                    <div class="absolute top-2 left-2 text-[9px] font-bold text-blue-400 uppercase">
+                      CCA. Split
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-blue-500 mt-2 text-center font-bold">LUCRO REAL</p>
+                </div>
               </div>
-              <span>Multi-usuários e permissões</span>
+              <p class="text-xs text-slate-400 text-center leading-relaxed">
+                Economia média de <span class="text-emerald-400 font-bold">15% a 35%</span> na carga
+                tributária total da operação.
+              </p>
             </div>
-            <div class="flex items-center gap-4 text-slate-300">
-              <div
-                class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"
-              >
-                ✓
+
+            <div class="space-y-6">
+              <div class="flex items-center gap-4 text-slate-300">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"
+                >
+                  ✓
+                </div>
+                <p class="text-sm leading-relaxed">
+                  <strong>Blindagem Fiscal:</strong> Estrutura jurídica desenhada para evitar a
+                  bitributação em repasses de honorários.
+                </p>
               </div>
-              <span>Relatórios financeiros em tempo real</span>
-            </div>
-            <div class="flex items-center gap-4 text-slate-300">
-              <div
-                class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"
-              >
-                ✓
+              <div class="flex items-center gap-4 text-slate-300">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"
+                >
+                  ✓
+                </div>
+                <p class="text-sm leading-relaxed">
+                  <strong>Gestão de Talentos:</strong> Monitoramento em tempo real de produtividade
+                  e repasses para sua rede PJ/PF.
+                </p>
               </div>
-              <span>Integração nativa com APIs de pagamento</span>
             </div>
           </div>
         </div>
