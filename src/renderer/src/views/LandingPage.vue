@@ -243,14 +243,14 @@ const features = [
     <section id="solucao" class="relative z-10 py-32 px-6 scroll-mt-28">
       <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
         <div class="relative order-2 lg:order-1">
-          <div class="absolute -inset-4 bg-red-500/10 rounded-[3rem] blur-3xl"></div>
+          <div class="absolute -inset-4 bg-amber-500/10 rounded-[3rem] blur-3xl"></div>
           <div
             class="relative bg-slate-900/50 border border-white/5 p-8 rounded-[2.5rem] space-y-6"
           >
             <div
-              class="flex items-center gap-4 text-red-400 font-bold uppercase text-xs tracking-widest"
+              class="flex items-center gap-4 text-amber-400 font-bold uppercase text-xs tracking-widest"
             >
-              <span class="w-12 h-px bg-red-400/50"></span>
+              <span class="w-12 h-px bg-amber-400/50"></span>
               O Custo da Ineficiência
             </div>
             <h3 class="text-3xl font-black text-white">
@@ -272,7 +272,7 @@ const features = [
                 class="flex items-center gap-3 text-slate-300"
               >
                 <div
-                  class="w-5 h-5 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-[10px] font-bold"
+                  class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold"
                 >
                   X
                 </div>
@@ -284,7 +284,7 @@ const features = [
         <div class="space-y-8 order-1 lg:order-2">
           <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight">
             Pare de queimar dinheiro com impostos que
-            <span class="text-red-400">não são seus.</span>
+            <span class="text-amber-400">não são seus.</span>
           </h2>
           <p class="text-lg text-slate-400 leading-relaxed font-medium">
             O CCA Split foi desenhado para quem cansa de ver a margem de lucro desaparecer em

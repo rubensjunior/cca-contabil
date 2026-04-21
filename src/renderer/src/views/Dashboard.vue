@@ -9,8 +9,10 @@ import {
   ArrowUpRight,
   Plus,
   Compass,
-  ArrowUpCircle
+  ArrowUpCircle,
+  HelpCircle
 } from 'lucide-vue-next'
+import OnboardingWizard from '../components/OnboardingWizard.vue'
 
 const router = useRouter()
 
@@ -28,6 +30,7 @@ const cancelError = ref('')
 
 const user = ref<UserSession | null>(null)
 const config = ref<AppConfig | null>(null)
+const showOnboarding = ref(false)
 
 const handleLogout = async (): Promise<void> => {
   await closeSession()
@@ -44,10 +47,42 @@ onMounted(async () => {
     const workDB = getWorkDB()
     const doc = await workDB.get<AppConfig>('config:main')
     config.value = doc
+
+    // Acionar onboarding se for o primeiro acesso
+    if (!doc.onboardingCompleted) {
+      showOnboarding.value = true
+    }
   } catch {
     console.warn('Config não encontrada no banco de trabalho')
   }
 })
+
+const handleCompleteOnboarding = async (data: {
+  asaasApiKey: string
+  businessSegment: string
+}): Promise<void> => {
+  showOnboarding.value = false
+  if (config.value) {
+    try {
+      const workDB = getWorkDB()
+      const updatedConfig = {
+        ...config.value,
+        asaasApiKey: data.asaasApiKey,
+        businessSegment: data.businessSegment,
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString()
+      }
+      await workDB.put(updatedConfig)
+      config.value = updatedConfig
+    } catch (err) {
+      console.error('Erro ao salvar progresso do onboarding:', err)
+    }
+  }
+}
+
+const handleOpenOnboarding = (): void => {
+  showOnboarding.value = true
+}
 
 const handleCancelSubscription = async (): Promise<void> => {
   if (!user.value?.subscriptionId) return
@@ -111,6 +146,13 @@ const handleCancelSubscription = async (): Promise<void> => {
           <BarChart3 :size="18" />
           Gestão de Repasses
         </div>
+        <button
+          class="w-full p-3 text-slate-500 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all flex items-center gap-3"
+          @click="handleOpenOnboarding"
+        >
+          <HelpCircle :size="18" />
+          Guia de Início
+        </button>
         <router-link
           to="/dashboard/sales"
           class="p-3 text-blue-600 hover:bg-blue-50 bg-white border border-transparent hover:border-blue-100 rounded-xl transition-all flex items-center gap-3 group"
@@ -289,5 +331,16 @@ const handleCancelSubscription = async (): Promise<void> => {
         </button>
       </div>
     </main>
+
+    <!-- Onboarding Layer -->
+    <OnboardingWizard
+      :show="showOnboarding"
+      :initial-data="{
+        asaasApiKey: config?.asaasApiKey,
+        businessSegment: config?.businessSegment
+      }"
+      @close="showOnboarding = false"
+      @complete="handleCompleteOnboarding"
+    />
   </div>
 </template>

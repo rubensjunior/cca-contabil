@@ -66,6 +66,8 @@ export interface AppConfig extends BaseDoc {
     city: string
     state: string
   }
+  onboardingCompleted?: boolean
+  businessSegment?: string
 }
 
 // Bancos de Dados
