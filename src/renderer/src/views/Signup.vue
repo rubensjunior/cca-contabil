@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, Company, AppConfig, initUserSession, getWorkDB, generateId } from '../database/pouch'
+import db, {
+  User,
+  Company,
+  AppConfig,
+  initUserSession,
+  getWorkDB,
+  generateId
+} from '../database/pouch'
 import { ArrowRight } from 'lucide-vue-next'
 import { PhShieldCheckered, PhChartLineUp, PhCoins } from '@phosphor-icons/vue'
 import {

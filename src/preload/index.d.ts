@@ -20,7 +20,17 @@ export interface SubscriptionStatusResponse {
   status?: string
   invoiceUrl?: string
   isPaid?: boolean
+  isCancelled?: boolean
   paymentStatus?: string
+  value?: number
+  startDate?: string
+  nextDueDate?: string
+  error?: string
+}
+
+export interface InvoiceUrlResponse {
+  success: boolean
+  invoiceUrl?: string | null
   error?: string
 }
 
@@ -33,6 +43,7 @@ export interface Api {
   asaas: {
     setupPayment: (data: SetupPaymentData) => Promise<SetupPaymentResponse>
     getSubscriptionStatus: (id: string) => Promise<SubscriptionStatusResponse>
+    getInvoiceUrl: (id: string) => Promise<InvoiceUrlResponse>
     cancelSubscription: (id: string) => Promise<{ success: boolean; error?: string }>
     checkCustomer: (
       cpfCnpj: string

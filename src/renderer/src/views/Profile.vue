@@ -154,15 +154,23 @@ const syncAsaasStatus = async (): Promise<void> => {
           company.asaasSubscriptionId
         )
         if (statusResult.success) {
-          const realStatus = statusResult.isPaid ? 'paid' : 'pending'
+          // Determina o status real: cancelada > inadimplente > paga
+          const res = statusResult
+          const realStatus: 'pending' | 'paid' | 'overdue' | 'cancelled' = res.isCancelled
+            ? 'cancelled'
+            : res.isPaid
+              ? 'paid'
+              : 'overdue'
 
           let changed = false
           if (company.paymentStatus !== realStatus) {
             company.paymentStatus = realStatus
             changed = true
           }
-          if (statusResult.invoiceUrl && company.asaasInvoiceUrl !== statusResult.invoiceUrl) {
-            company.asaasInvoiceUrl = statusResult.invoiceUrl
+          // Se cancelada, limpa a URL de fatura (não há mais cobrança ativa)
+          const newInvoiceUrl = res.isCancelled ? undefined : statusResult.invoiceUrl
+          if (company.asaasInvoiceUrl !== newInvoiceUrl) {
+            company.asaasInvoiceUrl = newInvoiceUrl
             changed = true
           }
           if (statusResult.value !== undefined && company.value !== statusResult.value) {
@@ -422,11 +430,22 @@ const handleCancelSubscription = async (subscriptionId?: string): Promise<void> 
   try {
     const result = await window.api.asaas.cancelSubscription(subscriptionId)
     if (result.success) {
-      // Encontrar e atualizar a empresa na lista e no banco
-      const company = companies.value.find((c) => c.asaasSubscriptionId === subscriptionId)
-      if (company) {
-        company.paymentStatus = 'overdue' // ou inativo dependendo da lógica
-        await db.put(company)
+      // Encontrar a referência reativa da empresa
+      const companyRef = companies.value.find((c) => c.asaasSubscriptionId === subscriptionId)
+      if (companyRef) {
+        // Busca o doc mais recente para garantir _rev correto
+        const freshDoc = await db.get<Company>(companyRef._id)
+        const updatedCompany: Company = {
+          ...freshDoc,
+          paymentStatus: 'overdue',
+          updatedAt: new Date().toISOString()
+        }
+        await db.put(updatedCompany)
+
+        // Atualiza o objeto reativo
+        companyRef.paymentStatus = 'overdue'
+        companyRef._rev = updatedCompany._rev
+        companyRef.updatedAt = updatedCompany.updatedAt
       }
       showMessage('Assinatura cancelada com sucesso.', 'success')
     } else {
@@ -808,12 +827,12 @@ const handleLogout = async (): Promise<void> => {
                 </div>
                 <div class="flex items-center gap-3">
                   <button
-                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
-                    :class="{ 'animate-spin': isLoading }"
+                    :disabled="isLoading"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 font-bold text-xs disabled:opacity-60"
                     title="Sincronizar com Asaas"
                     @click="syncAsaasStatus"
                   >
-                    <RefreshCcw :size="16" />
+                    <RefreshCcw :size="16" :class="{ 'animate-spin': isLoading }" />
                     Sincronizar Status
                   </button>
                   <button
@@ -968,10 +987,18 @@ const handleLogout = async (): Promise<void> => {
                             :class="
                               company.paymentStatus === 'paid'
                                 ? 'text-[var(--metronic-success)]'
-                                : 'text-amber-500'
+                                : (company.paymentStatus as string) === 'cancelled'
+                                  ? 'text-[var(--metronic-danger)]'
+                                  : 'text-amber-500'
                             "
                           >
-                            {{ company.paymentStatus === 'paid' ? 'Ativo' : 'Pendente' }}
+                            {{
+                              company.paymentStatus === 'paid'
+                                ? 'Ativo'
+                                : (company.paymentStatus as string) === 'cancelled'
+                                  ? 'Cancelada'
+                                  : 'Pendente'
+                            }}
                           </span>
                         </p>
                       </div>
@@ -1002,7 +1029,7 @@ const handleLogout = async (): Promise<void> => {
 
                   <div class="flex flex-col gap-3 w-full md:w-auto">
                     <a
-                      v-if="company.asaasInvoiceUrl"
+                      v-if="company.asaasInvoiceUrl && company.paymentStatus !== 'cancelled'"
                       :href="company.asaasInvoiceUrl"
                       target="_blank"
                       class="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
@@ -1011,13 +1038,19 @@ const handleLogout = async (): Promise<void> => {
                       <ExternalLink :size="16" />
                     </a>
                     <button
-                      v-if="company.asaasSubscriptionId"
+                      v-if="company.asaasSubscriptionId && company.paymentStatus !== 'cancelled'"
                       :disabled="isLoading"
                       class="text-[var(--metronic-danger)] hover:bg-[var(--metronic-danger-light)] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all border border-transparent hover:border-[var(--metronic-danger)]"
                       @click="handleCancelSubscription(company.asaasSubscriptionId)"
                     >
                       Cancelar Assinatura
                     </button>
+                    <span
+                      v-if="company.paymentStatus === 'cancelled'"
+                      class="text-[var(--metronic-danger)] bg-red-50 border border-red-100 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-center"
+                    >
+                      Assinatura Cancelada
+                    </span>
                   </div>
                 </div>
                 <div

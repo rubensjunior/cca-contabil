@@ -18,13 +18,13 @@ onMounted(async () => {
   try {
     const allDocs = await db.allDocs({ include_docs: true })
     const userCompanies = allDocs.rows
-      .map(row => row.doc as unknown as Company)
-      .filter(doc => doc.type === 'company' && doc.userId === userId)
+      .map((row) => row.doc as unknown as Company)
+      .filter((doc) => doc.type === 'company' && doc.userId === userId)
 
     companies.value = userCompanies
-    
+
     // Set active company based on current session tenantId
-    const active = userCompanies.find(c => c.tenantId === currentTenantId)
+    const active = userCompanies.find((c) => c.tenantId === currentTenantId)
     if (active) {
       activeCompany.value = active
     } else if (userCompanies.length > 0) {
@@ -36,7 +36,7 @@ onMounted(async () => {
   }
 })
 
-const switchCompany = async (company: Company) => {
+const switchCompany = async (company: Company): Promise<void> => {
   if (activeCompany.value?.tenantId === company.tenantId) {
     isDropdownOpen.value = false
     return
@@ -50,12 +50,12 @@ const switchCompany = async (company: Company) => {
     session.subscriptionId = company.asaasSubscriptionId || ''
     session.invoiceUrl = company.asaasInvoiceUrl || ''
     session.paymentStatus = company.paymentStatus || 'pending'
-    
+
     localStorage.setItem('cca_session', JSON.stringify(session))
-    
+
     // Reinicializa a sessão para o novo tenant
     initUserSession(company.tenantId)
-    
+
     // Força um reload limpo para recarregar todos os dados do painel atual no novo contexto (WorkDB)
     window.location.reload()
   }
@@ -65,19 +65,29 @@ const switchCompany = async (company: Company) => {
 <template>
   <div v-if="companies.length > 0" class="relative mt-4 px-5 z-[100]">
     <button
-      @click="isDropdownOpen = !isDropdownOpen"
       class="w-full bg-[#1b1b28] hover:bg-black/20 border border-white/5 rounded-xl p-3 flex items-center justify-between transition-all group"
+      @click="isDropdownOpen = !isDropdownOpen"
     >
       <div class="flex items-center gap-3 overflow-hidden">
-        <div class="w-8 h-8 rounded-lg bg-[var(--cca-blue)]/20 text-[var(--cca-blue)] flex items-center justify-center shrink-0">
+        <div
+          class="w-8 h-8 rounded-lg bg-[var(--cca-blue)]/20 text-[var(--cca-blue)] flex items-center justify-center shrink-0"
+        >
           <Building2 :size="16" />
         </div>
         <div class="flex flex-col items-start overflow-hidden text-left">
-          <span class="text-white text-xs font-bold truncate w-full">{{ activeCompany?.name || 'Selecione' }}</span>
-          <span class="text-slate-500 text-[9px] uppercase tracking-widest font-bold">{{ activeCompany?.cnpj || '' }}</span>
+          <span class="text-white text-xs font-bold truncate w-full">
+            {{ activeCompany?.name || 'Selecione' }}
+          </span>
+          <span class="text-slate-500 text-[9px] uppercase tracking-widest font-bold">
+            {{ activeCompany?.cnpj || '' }}
+          </span>
         </div>
       </div>
-      <ChevronDown :size="14" class="text-slate-500 transition-transform" :class="isDropdownOpen ? 'rotate-180' : ''" />
+      <ChevronDown
+        :size="14"
+        class="text-slate-500 transition-transform"
+        :class="isDropdownOpen ? 'rotate-180' : ''"
+      />
     </button>
 
     <Transition name="dropdown-fade">
@@ -91,22 +101,33 @@ const switchCompany = async (company: Company) => {
         <button
           v-for="company in companies"
           :key="company._id"
-          @click="switchCompany(company)"
           class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors text-left group"
+          @click="switchCompany(company)"
         >
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-slate-300 group-hover:text-white transition-colors" :class="company.tenantId === activeCompany?.tenantId ? 'text-[var(--cca-blue)]' : ''">
+            <span
+              class="text-sm font-bold text-slate-300 group-hover:text-white transition-colors"
+              :class="company.tenantId === activeCompany?.tenantId ? 'text-[var(--cca-blue)]' : ''"
+            >
               {{ company.name }}
             </span>
             <span class="text-[10px] font-medium text-slate-500">{{ company.cnpj }}</span>
           </div>
-          <Check v-if="company.tenantId === activeCompany?.tenantId" :size="16" class="text-[var(--cca-blue)]" />
+          <Check
+            v-if="company.tenantId === activeCompany?.tenantId"
+            :size="16"
+            class="text-[var(--cca-blue)]"
+          />
         </button>
       </div>
     </Transition>
-    
+
     <!-- Fechar dropdown ao clicar fora -->
-    <div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40 bg-transparent"></div>
+    <div
+      v-if="isDropdownOpen"
+      class="fixed inset-0 z-40 bg-transparent"
+      @click="isDropdownOpen = false"
+    ></div>
   </div>
 </template>
 

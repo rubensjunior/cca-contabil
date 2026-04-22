@@ -20,7 +20,7 @@ export interface Company extends BaseDoc {
   asaasCustomerId?: string
   asaasSubscriptionId?: string
   asaasInvoiceUrl?: string
-  paymentStatus?: 'pending' | 'paid' | 'overdue'
+  paymentStatus?: 'pending' | 'paid' | 'overdue' | 'cancelled'
   value?: number
   startDate?: string
   nextDueDate?: string
@@ -38,7 +38,7 @@ export interface User extends BaseDoc {
   asaasCustomerId?: string
   asaasSubscriptionId?: string
   asaasInvoiceUrl?: string
-  paymentStatus?: 'pending' | 'paid' | 'overdue'
+  paymentStatus?: 'pending' | 'paid' | 'overdue' | 'cancelled'
   value?: number
   startDate?: string
   nextDueDate?: string

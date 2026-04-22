@@ -30,7 +30,13 @@ declare global {
           nextDueDate?: string
           invoiceUrl?: string
           isPaid?: boolean
+          isCancelled?: boolean
           paymentStatus?: string
+          error?: string
+        }>
+        getInvoiceUrl: (id: string) => Promise<{
+          success: boolean
+          invoiceUrl?: string | null
           error?: string
         }>
         cancelSubscription: (id: string) => Promise<{ success: boolean; error?: string }>

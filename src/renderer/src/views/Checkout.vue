@@ -5,10 +5,11 @@ import db, { User, getWorkDB, AppConfig } from '../database/pouch'
 
 const router = useRouter()
 const session = JSON.parse(localStorage.getItem('cca_session') || '{}')
-const invoiceUrl = ref(session.invoiceUrl || '')
-const subscriptionId = ref(session.subscriptionId || '')
+const invoiceUrl = ref<string>(session.invoiceUrl || '')
+const subscriptionId = ref<string>(session.subscriptionId || '')
 const isChecking = ref(false)
 const isGeneratingLink = ref(false)
+const isOpeningLink = ref(false)
 const status = ref('pending')
 const error = ref('')
 
@@ -45,12 +46,15 @@ const generatePaymentLink = async (): Promise<void> => {
       })
 
       // Atualizar referências e sessão
-      subscriptionId.value = asaasResult.subscriptionId
-      invoiceUrl.value = asaasResult.invoiceUrl
+      subscriptionId.value = asaasResult.subscriptionId || ''
+      invoiceUrl.value = asaasResult.invoiceUrl || ''
 
-      session.subscriptionId = asaasResult.subscriptionId
-      session.invoiceUrl = asaasResult.invoiceUrl
-      localStorage.setItem('cca_session', JSON.stringify(session))
+      const updatedSession = {
+        ...session,
+        subscriptionId: asaasResult.subscriptionId,
+        invoiceUrl: asaasResult.invoiceUrl
+      }
+      localStorage.setItem('cca_session', JSON.stringify(updatedSession))
 
       // Iniciar verificações
       checkPaymentStatus()
@@ -77,6 +81,11 @@ const checkPaymentStatus = async (): Promise<void> => {
     if (result.success) {
       status.value = result.paymentStatus?.toLowerCase() || 'pending'
 
+      // Atualizar o invoiceUrl sempre que vier do servidor
+      if (result.invoiceUrl) {
+        invoiceUrl.value = result.invoiceUrl
+      }
+
       // Só libera o acesso se o pagamento estiver confirmado/recebido
       if (result.isPaid) {
         // Atualizar Banco Local
@@ -87,10 +96,13 @@ const checkPaymentStatus = async (): Promise<void> => {
           paymentStatus: 'paid'
         })
 
-        // Atualizar Sessão
-        session.isPaid = true
-        session.paymentStatus = 'paid'
-        localStorage.setItem('cca_session', JSON.stringify(session))
+        // Atualizar sessão de forma SÍNCRONA antes de redirecionar
+        const updatedSession = {
+          ...JSON.parse(localStorage.getItem('cca_session') || '{}'),
+          isPaid: true,
+          paymentStatus: 'paid'
+        }
+        localStorage.setItem('cca_session', JSON.stringify(updatedSession))
 
         // Redirecionar com um pequeno delay para o usuário ver a confirmação
         setTimeout(() => {
@@ -102,14 +114,38 @@ const checkPaymentStatus = async (): Promise<void> => {
     }
   } catch (err) {
     console.error(err)
+    error.value = 'Não foi possível verificar o pagamento. Verifique sua conexão.'
   } finally {
     isChecking.value = false
   }
 }
 
-const openCheckout = (): void => {
-  if (invoiceUrl.value) {
-    window.open(invoiceUrl.value, '_blank')
+const openCheckout = async (): Promise<void> => {
+  if (!subscriptionId.value) return
+  isOpeningLink.value = true
+
+  try {
+    // Se já temos o URL, usar direto; senão buscar do servidor
+    let urlToOpen = invoiceUrl.value
+
+    if (!urlToOpen) {
+      const result = await window.api.asaas.getInvoiceUrl(subscriptionId.value)
+      if (result.success && result.invoiceUrl) {
+        urlToOpen = result.invoiceUrl
+        invoiceUrl.value = urlToOpen
+      } else {
+        error.value = 'Não foi possível obter o link de pagamento. Tente novamente.'
+        return
+      }
+    }
+
+    // No Electron, window.open é interceptado pelo shell.openExternal
+    window.open(urlToOpen, '_blank')
+  } catch (err) {
+    console.error(err)
+    error.value = 'Erro ao tentar abrir o link de pagamento.'
+  } finally {
+    isOpeningLink.value = false
   }
 }
 
@@ -122,7 +158,7 @@ const handleLogout = async (): Promise<void> => {
 onMounted(() => {
   if (!subscriptionId.value) {
     error.value =
-      'Seu link de pagamento ainda não foi gerado ou houve uma falha de conexão anterior. Clique no botão abaixo para gerar seu acesso ao Asaas.'
+      'Nenhuma assinatura encontrada para sua conta. Clique no botão abaixo para gerar seu link de pagamento no Asaas.'
     return
   }
 
@@ -189,7 +225,8 @@ onUnmounted(() => {
               :class="{
                 'bg-amber-500/10 text-amber-500': status === 'pending',
                 'bg-blue-500/10 text-blue-500': status === 'confirmed',
-                'bg-emerald-500/10 text-emerald-500': status === 'received'
+                'bg-emerald-500/10 text-emerald-500':
+                  status === 'received' || status === 'received_in_cash'
               }"
             >
               {{
@@ -197,7 +234,7 @@ onUnmounted(() => {
                   ? 'Aguardando'
                   : status === 'confirmed'
                     ? 'Confirmado'
-                    : status === 'received'
+                    : status === 'received' || status === 'received_in_cash'
                       ? 'Recebido'
                       : 'Verificando'
               }}
@@ -209,7 +246,7 @@ onUnmounted(() => {
               :class="{
                 'bg-amber-500': status === 'pending',
                 'bg-blue-500': status === 'confirmed',
-                'bg-emerald-500': status === 'received'
+                'bg-emerald-500': status === 'received' || status === 'received_in_cash'
               }"
             ></div>
             <p class="text-sm text-slate-300">
@@ -218,7 +255,7 @@ onUnmounted(() => {
                   ? 'Buscando confirmação no Asaas...'
                   : status === 'confirmed'
                     ? 'Pagamento identificado! Liberando...'
-                    : status === 'received'
+                    : status === 'received' || status === 'received_in_cash'
                       ? 'Pagamento recebido com sucesso!'
                       : 'Atualizando status...'
               }}
@@ -229,20 +266,43 @@ onUnmounted(() => {
         <div class="w-full space-y-4">
           <button
             v-if="subscriptionId"
-            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+            :disabled="isOpeningLink"
+            class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-70 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-[0.98]"
             @click="openCheckout"
           >
-            Pagar Agora no Asaas
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              v-if="isOpeningLink"
+              class="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              />
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
+            <template v-else>
+              Pagar Agora no Asaas
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </template>
           </button>
-
           <button
             v-else
             :disabled="isGeneratingLink"

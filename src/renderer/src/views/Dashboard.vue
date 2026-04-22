@@ -88,9 +88,7 @@ const handleOpenOnboarding = (): void => {
             <span class="text-white text-2xl font-black">C</span>
           </div>
           <div class="flex flex-col">
-            <span class="text-white brand-logo text-xl tracking-tight leading-4"
-              >CCA.SPLIT</span
-            >
+            <span class="text-white brand-logo text-xl tracking-tight leading-4">CCA.SPLIT</span>
             <span
               class="text-[10px] text-[var(--metronic-sidebar-text)] font-bold uppercase tracking-[0.2em] opacity-40 mt-1"
               >HUB CORPORATIVO</span

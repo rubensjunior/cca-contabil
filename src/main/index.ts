@@ -91,13 +91,32 @@ function createWindow(): void {
   ipcMain.handle('asaas:get-subscription-status', async (_, subscriptionId: string) => {
     try {
       const sub = await AsaasService.getSubscription(subscriptionId)
+
+      // Se a assinatura estiver cancelada no Asaas (INACTIVE), retorna imediatamente
+      // sem verificar pagamentos históricos para evitar falso-positivo de "ativo"
+      if (sub.status === 'INACTIVE') {
+        return {
+          success: true,
+          status: 'INACTIVE',
+          value: sub.value,
+          startDate: sub.startDate,
+          nextDueDate: sub.nextDueDate,
+          invoiceUrl: null,
+          isPaid: false,
+          isCancelled: true,
+          paymentStatus: 'CANCELLED'
+        }
+      }
+
       const payments = await AsaasService.getSubscriptionPayments(subscriptionId)
 
-      // Verificar se existe algum pagamento com status que liberte o acesso
+      // Verificar se existe algum pagamento com status que libere o acesso
       // RECEIVED: Pagamento em conta
       // CONFIRMED: Pagamento confirmado (ex: cartão aprovação imediata)
+      // RECEIVED_IN_CASH: Confirmado manualmente como pago em dinheiro
       const confirmedPayment = payments.find(
-        (p) => p.status === 'RECEIVED' || p.status === 'CONFIRMED'
+        (p) =>
+          p.status === 'RECEIVED' || p.status === 'CONFIRMED' || p.status === 'RECEIVED_IN_CASH'
       )
 
       const pendingPayment = payments.find((p) => p.status === 'PENDING')
@@ -108,10 +127,23 @@ function createWindow(): void {
         value: sub.value,
         startDate: sub.startDate,
         nextDueDate: sub.nextDueDate,
-        invoiceUrl: sub.invoiceUrl || pendingPayment?.invoiceUrl,
+        invoiceUrl: pendingPayment?.invoiceUrl || sub.invoiceUrl || sub.checkoutUrl,
         isPaid: !!confirmedPayment,
+        isCancelled: false,
         paymentStatus: confirmedPayment ? confirmedPayment.status : 'PENDING'
       }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  ipcMain.handle('asaas:get-invoice-url', async (_, subscriptionId: string) => {
+    try {
+      const payments = await AsaasService.getSubscriptionPayments(subscriptionId)
+      const pendingPayment = payments.find((p) => p.status === 'PENDING')
+      const sub = await AsaasService.getSubscription(subscriptionId)
+      const url = pendingPayment?.invoiceUrl || sub.invoiceUrl || sub.checkoutUrl || null
+      return { success: true, invoiceUrl: url }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
