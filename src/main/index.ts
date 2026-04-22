@@ -58,16 +58,28 @@ function createWindow(): void {
             cpfCnpj: data.cpfCnpj,
             mobilePhone: data.mobilePhone
           })
+        } else {
+          // Atualiza dados do cliente existente (Novo Negócio com mesmo CNPJ)
+          customer = await AsaasService.updateCustomer(customer.id, {
+            name: data.name,
+            email: data.email,
+            mobilePhone: data.mobilePhone
+          })
         }
 
         // 2. Criar assinatura
         const subscription = await AsaasService.createSubscription(customer.id)
 
+        // 3. Buscar os pagamentos gerados para obter o link de pagamento
+        const payments = await AsaasService.getSubscriptionPayments(subscription.id)
+        const pendingPayment = payments.find((p) => p.status === 'PENDING')
+
         return {
           success: true,
           customerId: customer.id,
           subscriptionId: subscription.id,
-          invoiceUrl: subscription.invoiceUrl || subscription.checkoutUrl
+          invoiceUrl:
+            pendingPayment?.invoiceUrl || subscription.invoiceUrl || subscription.checkoutUrl
         }
       } catch (err) {
         console.error('Erro Asaas Setup:', err)
@@ -88,10 +100,12 @@ function createWindow(): void {
         (p) => p.status === 'RECEIVED' || p.status === 'CONFIRMED'
       )
 
+      const pendingPayment = payments.find((p) => p.status === 'PENDING')
+
       return {
         success: true,
         status: sub.status,
-        invoiceUrl: sub.invoiceUrl,
+        invoiceUrl: sub.invoiceUrl || pendingPayment?.invoiceUrl,
         isPaid: !!confirmedPayment,
         paymentStatus: confirmedPayment ? confirmedPayment.status : 'PENDING'
       }

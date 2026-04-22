@@ -293,8 +293,9 @@ const handleSignup = async (): Promise<void> => {
   error.value = ''
 
   try {
+    const emailNormalized = email.value.toLowerCase().trim()
     // 1. Verificar se o e-mail já existe
-    const userId = `user:${email.value}`
+    const userId = `user:${emailNormalized}`
     try {
       await db.get(userId)
       error.value = 'Este e-mail já está cadastrado. Por favor, faça login para continuar.'
@@ -312,7 +313,7 @@ const handleSignup = async (): Promise<void> => {
       _id: userId,
       type: 'user',
       name: name.value,
-      email: email.value,
+      email: emailNormalized,
       passwordHash: password.value, // Simplificado para MVP
       role: 'admin',
       status: 'active',
@@ -354,18 +355,30 @@ const handleSignup = async (): Promise<void> => {
     // 5. Integração com Asaas
     const asaasResult = await window.api.asaas.setupPayment({
       name: name.value,
-      email: email.value,
+      email: emailNormalized,
       cpfCnpj: cpfCnpj.value,
       mobilePhone: phone.value
     })
 
     if (!asaasResult.success) {
-      // Se falhar o Asaas, ainda assim salvamos o user e informamos que ele pode tentar novamente via Login/Checkout
-      error.value =
-        'Conta criada, mas houve um problema com o pagamento: ' +
-        asaasResult.error +
-        '. Por favor, faça login para tentar novamente.'
-      isLoading.value = false
+      // Se falhar o Asaas, ainda assim salvamos o user e informamos via console
+      console.error('Erro na integração Asaas:', asaasResult.error)
+
+      // Inicia a sessão mesmo com falha e redireciona
+      localStorage.setItem(
+        'cca_session',
+        JSON.stringify({
+          id: newUser._id,
+          tenantId: tenantId,
+          name: newUser.name,
+          role: newUser.role,
+          email: newUser.email,
+          company: companyName.value,
+          paymentStatus: 'pending'
+        })
+      )
+
+      router.push('/checkout')
       return
     }
 

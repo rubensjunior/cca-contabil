@@ -99,6 +99,30 @@ export const AsaasService = {
     return result
   },
 
+  async updateCustomer(
+    customerId: string,
+    data: {
+      name: string
+      email: string
+      mobilePhone: string
+    }
+  ): Promise<AsaasCustomer> {
+    const response = await fetch(`${ASAAS_API_URL}/customers/${customerId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        access_token: ASAAS_API_KEY || ''
+      },
+      body: JSON.stringify(data)
+    })
+
+    const result = (await response.json()) as AsaasCustomer & AsaasErrorResponse
+    if (result.errors) {
+      throw new Error(result.errors[0].description)
+    }
+    return result
+  },
+
   async createSubscription(customerId: string): Promise<AsaasSubscription> {
     // Calcular vencimento: Hoje + 3 dias
     const nextDueDate = new Date()

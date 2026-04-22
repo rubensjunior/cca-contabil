@@ -1,17 +1,71 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User } from '../database/pouch'
+import db, { User, getWorkDB, AppConfig } from '../database/pouch'
 
 const router = useRouter()
 const session = JSON.parse(localStorage.getItem('cca_session') || '{}')
 const invoiceUrl = ref(session.invoiceUrl || '')
 const subscriptionId = ref(session.subscriptionId || '')
 const isChecking = ref(false)
+const isGeneratingLink = ref(false)
 const status = ref('pending')
 const error = ref('')
 
 let checkInterval: ReturnType<typeof setInterval> | null = null
+
+const generatePaymentLink = async (): Promise<void> => {
+  isGeneratingLink.value = true
+  error.value = ''
+
+  try {
+    const workDB = getWorkDB()
+    const config = await workDB.get<AppConfig>('config:main')
+
+    if (!config || !config.cnpj) {
+      throw new Error('Dados da empresa não encontrados no banco local.')
+    }
+
+    const asaasResult = await window.api.asaas.setupPayment({
+      name: session.name,
+      email: session.email,
+      cpfCnpj: config.cnpj,
+      mobilePhone: config.phone || ''
+    })
+
+    if (asaasResult.success) {
+      // Atualizar Banco Local AuthDB
+      const userId = session.id
+      const user = await db.get<User>(userId)
+      await db.put({
+        ...user,
+        asaasCustomerId: asaasResult.customerId,
+        asaasSubscriptionId: asaasResult.subscriptionId,
+        asaasInvoiceUrl: asaasResult.invoiceUrl
+      })
+
+      // Atualizar referências e sessão
+      subscriptionId.value = asaasResult.subscriptionId
+      invoiceUrl.value = asaasResult.invoiceUrl
+
+      session.subscriptionId = asaasResult.subscriptionId
+      session.invoiceUrl = asaasResult.invoiceUrl
+      localStorage.setItem('cca_session', JSON.stringify(session))
+
+      // Iniciar verificações
+      checkPaymentStatus()
+      if (checkInterval) clearInterval(checkInterval)
+      checkInterval = setInterval(checkPaymentStatus, 10000)
+    } else {
+      error.value = 'Falha ao conectar com o Asaas: ' + asaasResult.error
+    }
+  } catch (err: unknown) {
+    console.error(err)
+    error.value = (err as Error).message || 'Erro ao tentar gerar o link de pagamento.'
+  } finally {
+    isGeneratingLink.value = false
+  }
+}
 
 const checkPaymentStatus = async (): Promise<void> => {
   if (!subscriptionId.value) return
@@ -68,7 +122,7 @@ const handleLogout = async (): Promise<void> => {
 onMounted(() => {
   if (!subscriptionId.value) {
     error.value =
-      'Configuração de pagamento não encontrada. Por favor, faça logout e tente novamente.'
+      'Seu link de pagamento ainda não foi gerado ou houve uma falha de conexão anterior. Clique no botão abaixo para gerar seu acesso ao Asaas.'
     return
   }
 
@@ -174,6 +228,7 @@ onUnmounted(() => {
 
         <div class="w-full space-y-4">
           <button
+            v-if="subscriptionId"
             class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-[0.98]"
             @click="openCheckout"
           >
@@ -189,6 +244,37 @@ onUnmounted(() => {
           </button>
 
           <button
+            v-else
+            :disabled="isGeneratingLink"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+            @click="generatePaymentLink"
+          >
+            <svg
+              v-if="isGeneratingLink"
+              class="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span v-else>Gerar Link de Pagamento Segura</span>
+          </button>
+
+          <button
+            v-if="subscriptionId"
             :disabled="isChecking"
             class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
             @click="checkPaymentStatus"
@@ -228,7 +314,7 @@ onUnmounted(() => {
             class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all active:scale-[0.98]"
             @click="handleLogout"
           >
-            Sair e Tentar Novamente
+            Sair e Voltar Novamente
           </button>
         </div>
 

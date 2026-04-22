@@ -163,7 +163,8 @@ const handleLogin = async (): Promise<void> => {
     // Garantir que o admin padrão exista para testes
     await initializeDB()
 
-    const userId = `user:${email.value}`
+    const emailNormalized = email.value.toLowerCase().trim()
+    const userId = `user:${emailNormalized}`
     const user = await db.get<User>(userId)
 
     if (user && user.passwordHash === password.value) {
