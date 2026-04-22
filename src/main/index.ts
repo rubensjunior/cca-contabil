@@ -105,6 +105,9 @@ function createWindow(): void {
       return {
         success: true,
         status: sub.status,
+        value: sub.value,
+        startDate: sub.startDate,
+        nextDueDate: sub.nextDueDate,
         invoiceUrl: sub.invoiceUrl || pendingPayment?.invoiceUrl,
         isPaid: !!confirmedPayment,
         paymentStatus: confirmedPayment ? confirmedPayment.status : 'PENDING'

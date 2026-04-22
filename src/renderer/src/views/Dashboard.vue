@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
 import { BarChart3, Compass, HelpCircle, User } from 'lucide-vue-next'
 import OnboardingWizard from '../components/OnboardingWizard.vue'
+import CompanySwitcher from '../components/CompanySwitcher.vue'
 
 const router = useRouter()
 
@@ -97,6 +98,8 @@ const handleOpenOnboarding = (): void => {
           </div>
         </div>
       </div>
+
+      <CompanySwitcher />
 
       <!-- Scrollable Menu -->
       <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-sidebar-scroll">

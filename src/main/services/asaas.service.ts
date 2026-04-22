@@ -24,6 +24,9 @@ export interface AsaasSubscription {
   invoiceUrl: string
   checkoutUrl?: string
   status: string
+  value: number
+  startDate?: string
+  nextDueDate?: string
 }
 
 export interface AsaasPayment {

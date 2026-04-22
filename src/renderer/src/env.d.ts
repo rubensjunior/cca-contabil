@@ -25,6 +25,9 @@ declare global {
         getSubscriptionStatus: (id: string) => Promise<{
           success: boolean
           status?: string
+          value?: number
+          startDate?: string
+          nextDueDate?: string
           invoiceUrl?: string
           isPaid?: boolean
           paymentStatus?: string

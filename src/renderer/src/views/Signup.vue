@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, AppConfig, initUserSession, getWorkDB } from '../database/pouch'
+import db, { User, Company, AppConfig, initUserSession, getWorkDB, generateId } from '../database/pouch'
 import { ArrowRight } from 'lucide-vue-next'
 import { PhShieldCheckered, PhChartLineUp, PhCoins } from '@phosphor-icons/vue'
 import {
@@ -323,6 +323,20 @@ const handleSignup = async (): Promise<void> => {
       paymentStatus: 'pending'
     }
 
+    // 3.1 Criar Documento da Empresa no AuthDB
+    const companyId = generateId('company')
+    const newCompany: Company = {
+      _id: companyId,
+      type: 'company',
+      userId: userId,
+      name: companyName.value,
+      cnpj: cpfCnpj.value,
+      tenantId: tenantId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paymentStatus: 'pending'
+    }
+
     // 4. Inicializar Sessão de Trabalho do Tenant
     initUserSession(tenantId)
     const workDB = getWorkDB()
@@ -350,6 +364,7 @@ const handleSignup = async (): Promise<void> => {
 
     // 6. Salvar nos Bancos Corretos
     await db.put(newUser) // Salva no AuthDB
+    await db.put(newCompany) // Salva a empresa no AuthDB
     await workDB.put(newConfig) // Salva no WorkDB (isolado)
 
     // 5. Integração com Asaas
@@ -386,6 +401,15 @@ const handleSignup = async (): Promise<void> => {
     const updatedUser = await db.get<User>(userId)
     await db.put({
       ...updatedUser,
+      asaasCustomerId: asaasResult.customerId,
+      asaasSubscriptionId: asaasResult.subscriptionId,
+      asaasInvoiceUrl: asaasResult.invoiceUrl
+    })
+
+    // 8.1 Atualizar Empresa com dados do Asaas
+    const updatedCompany = await db.get<Company>(companyId)
+    await db.put({
+      ...updatedCompany,
       asaasCustomerId: asaasResult.customerId,
       asaasSubscriptionId: asaasResult.subscriptionId,
       asaasInvoiceUrl: asaasResult.invoiceUrl

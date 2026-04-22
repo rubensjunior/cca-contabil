@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, getWorkDB, closeSession } from '../database/pouch'
+import db, { User, Company, getWorkDB, closeSession, generateId } from '../database/pouch'
 import {
   ShieldCheck,
   CreditCard,
@@ -9,9 +9,12 @@ import {
   Home,
   Save,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  RefreshCcw,
+  Pencil
 } from 'lucide-vue-next'
 import { PhUser, PhShieldCheck, PhCreditCard, PhTrash } from '@phosphor-icons/vue'
+import CompanySwitcher from '../components/CompanySwitcher.vue'
 
 const router = useRouter()
 
@@ -45,6 +48,50 @@ const securityForm = ref({
 
 const activeTab = ref('personal')
 
+// Múltiplas Empresas / Assinaturas
+const companies = ref<Company[]>([])
+const isAddingCompany = ref(false)
+const newCompanyForm = ref({
+  name: '',
+  cnpj: ''
+})
+
+const formatCpfCnpj = (value: string): string => {
+  const val = value.replace(/\D/g, '')
+  if (val.length <= 11) {
+    // CPF: 000.000.000-00
+    return val
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1')
+  } else {
+    // CNPJ: 00.000.000/0000-00
+    return val
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1')
+  }
+}
+
+const handleCnpjInput = (e: Event, target: 'new' | 'edit'): void => {
+  const input = e.target as HTMLInputElement
+  const formatted = formatCpfCnpj(input.value)
+  if (target === 'new') {
+    newCompanyForm.value.cnpj = formatted
+  } else {
+    editCompanyForm.value.cnpj = formatted
+  }
+}
+
+const editingCompanyId = ref<string | null>(null)
+const editCompanyForm = ref({
+  name: '',
+  cnpj: ''
+})
+
 onMounted(async () => {
   const session = localStorage.getItem('cca_session')
   if (session) {
@@ -55,12 +102,114 @@ onMounted(async () => {
         currentUser.value = userDoc
         personalForm.value.name = userDoc.name
         personalForm.value.nickname = userDoc.nickname || ''
+
+        const allDocs = await db.allDocs({ include_docs: true })
+        let userCompanies = allDocs.rows
+          .map((row) => row.doc as unknown as Company)
+          .filter((doc) => doc.type === 'company' && doc.userId === userSession.value?.id)
+
+        // Migração para usuários antigos: se não tiver empresa, mas o userDoc tiver asaasSubscriptionId
+        if (userCompanies.length === 0 && userDoc.asaasSubscriptionId) {
+          const legacyCompany: Company = {
+            _id: generateId('company'),
+            type: 'company',
+            userId: userDoc._id,
+            name: userDoc.name + ' (Migrada)',
+            cnpj: 'N/A', // Não temos o CNPJ do usuário antigo no userDoc base
+            tenantId: userDoc.tenantId,
+            asaasCustomerId: userDoc.asaasCustomerId,
+            asaasSubscriptionId: userDoc.asaasSubscriptionId,
+            asaasInvoiceUrl: userDoc.asaasInvoiceUrl,
+            paymentStatus: userDoc.paymentStatus || 'paid',
+            createdAt: userDoc.createdAt,
+            updatedAt: new Date().toISOString()
+          }
+          await db.put(legacyCompany)
+          userCompanies.push(legacyCompany)
+        }
+
+        companies.value = userCompanies
+
+        // Sincronizar status automaticamente ao carregar
+        await syncAsaasStatus()
       } catch (err) {
         console.error('Erro ao carregar usuário:', err)
       }
     }
   }
 })
+
+const syncAsaasStatus = async (): Promise<void> => {
+  if (companies.value.length === 0) return
+
+  isLoading.value = true
+  try {
+    let sessionUpdated = false
+    const sessionStr = localStorage.getItem('cca_session')
+    const session = sessionStr ? JSON.parse(sessionStr) : {}
+
+    for (const company of companies.value) {
+      if (company.asaasSubscriptionId) {
+        const statusResult = await window.api.asaas.getSubscriptionStatus(
+          company.asaasSubscriptionId
+        )
+        if (statusResult.success) {
+          const realStatus = statusResult.isPaid ? 'paid' : 'pending'
+
+          let changed = false
+          if (company.paymentStatus !== realStatus) {
+            company.paymentStatus = realStatus
+            changed = true
+          }
+          if (statusResult.invoiceUrl && company.asaasInvoiceUrl !== statusResult.invoiceUrl) {
+            company.asaasInvoiceUrl = statusResult.invoiceUrl
+            changed = true
+          }
+          if (statusResult.value !== undefined && company.value !== statusResult.value) {
+            company.value = statusResult.value
+            changed = true
+          }
+          if (statusResult.startDate && company.startDate !== statusResult.startDate) {
+            company.startDate = statusResult.startDate
+            changed = true
+          }
+          if (statusResult.nextDueDate && company.nextDueDate !== statusResult.nextDueDate) {
+            company.nextDueDate = statusResult.nextDueDate
+            changed = true
+          }
+          if (changed) {
+            await db.put(company)
+
+            // Se for a empresa ativa na sessão, atualiza o localStorage
+            if (session.tenantId === company.tenantId) {
+              session.paymentStatus = realStatus
+              session.invoiceUrl = company.asaasInvoiceUrl
+              session.value = company.value
+              session.startDate = company.startDate
+              session.nextDueDate = company.nextDueDate
+              sessionUpdated = true
+            }
+          }
+        }
+      }
+    }
+
+    if (sessionUpdated) {
+      localStorage.setItem('cca_session', JSON.stringify(session))
+    }
+
+    if (activeTab.value === 'subscription') {
+      showMessage('Status das assinaturas sincronizados com o Asaas.', 'success')
+    }
+  } catch (err) {
+    console.error('Erro na sincronização manual:', err)
+    if (activeTab.value === 'subscription') {
+      showMessage('Erro ao sincronizar com Asaas.', 'error')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const showMessage = (text: string, type: 'success' | 'error'): void => {
   message.value = { text, type }
@@ -71,6 +220,20 @@ const showMessage = (text: string, type: 'success' | 'error'): void => {
 
 const handleSavePersonal = async (): Promise<void> => {
   if (!currentUser.value) return
+
+  if (!personalForm.value.name.trim()) {
+    showMessage('O nome completo é obrigatório.', 'error')
+    return
+  }
+
+  const noChanges =
+    currentUser.value.name === personalForm.value.name &&
+    (currentUser.value.nickname || '') === personalForm.value.nickname
+  if (noChanges) {
+    showMessage('Nenhuma alteração foi feita.', 'error')
+    return
+  }
+
   isLoading.value = true
   try {
     const updatedUser = {
@@ -103,6 +266,11 @@ const handleSavePersonal = async (): Promise<void> => {
 
 const handleUpdatePassword = async (): Promise<void> => {
   if (!currentUser.value) return
+
+  if (securityForm.value.newPassword.length < 8) {
+    showMessage('A nova senha deve ter pelo menos 8 caracteres.', 'error')
+    return
+  }
 
   if (securityForm.value.newPassword !== securityForm.value.confirmPassword) {
     showMessage('As novas senhas não coincidem.', 'error')
@@ -139,27 +307,127 @@ const handleUpdatePassword = async (): Promise<void> => {
   }
 }
 
-const handleCancelSubscription = async (): Promise<void> => {
-  if (!currentUser.value?.asaasSubscriptionId) return
+const handleAddCompany = async (): Promise<void> => {
+  if (!newCompanyForm.value.name || !newCompanyForm.value.cnpj) {
+    showMessage('Preencha o nome e CNPJ da nova empresa.', 'error')
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const tenantId = crypto.randomUUID()
+    const companyId = generateId('company')
+
+    const newCompany: Company = {
+      _id: companyId,
+      type: 'company',
+      userId: currentUser.value!._id,
+      name: newCompanyForm.value.name,
+      cnpj: newCompanyForm.value.cnpj,
+      tenantId: tenantId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paymentStatus: 'pending'
+    }
+
+    // Tentar criar no Asaas
+    const asaasResult = await window.api.asaas.setupPayment({
+      name: currentUser.value!.name, // owner name
+      email: currentUser.value!.email,
+      cpfCnpj: newCompanyForm.value.cnpj,
+      mobilePhone: '' // Pegar de algum lugar se necessário, ou vazio
+    })
+
+    if (asaasResult.success) {
+      newCompany.asaasCustomerId = asaasResult.customerId
+      newCompany.asaasSubscriptionId = asaasResult.subscriptionId
+      newCompany.asaasInvoiceUrl = asaasResult.invoiceUrl
+    } else {
+      console.error('Falha ao registrar no Asaas, salvando apenas local.', asaasResult.error)
+      showMessage(
+        'Nova empresa adicionada, mas houve um erro ao gerar a cobrança (Asaas).',
+        'error'
+      )
+    }
+
+    await db.put(newCompany)
+    companies.value.push(newCompany)
+
+    isAddingCompany.value = false
+    newCompanyForm.value = { name: '', cnpj: '' }
+    if (asaasResult.success) {
+      showMessage('Nova empresa adicionada com sucesso!', 'success')
+    }
+  } catch (err) {
+    console.error('Erro ao adicionar empresa:', err)
+    showMessage('Erro ao adicionar a nova empresa.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const startEditCompany = (company: Company): void => {
+  editingCompanyId.value = company._id
+  editCompanyForm.value = {
+    name: company.name,
+    cnpj: company.cnpj
+  }
+}
+
+const handleUpdateCompany = async (): Promise<void> => {
+  if (!editingCompanyId.value) return
+  if (!editCompanyForm.value.name || !editCompanyForm.value.cnpj) {
+    showMessage('Nome e CNPJ são obrigatórios.', 'error')
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const company = companies.value.find((c) => c._id === editingCompanyId.value)
+    if (company) {
+      company.name = editCompanyForm.value.name
+      company.cnpj = editCompanyForm.value.cnpj
+      company.updatedAt = new Date().toISOString()
+      await db.put(company)
+
+      // Atualiza sessão se for a atual
+      const session = JSON.parse(localStorage.getItem('cca_session') || '{}')
+      if (session.tenantId === company.tenantId) {
+        session.company = company.name
+        localStorage.setItem('cca_session', JSON.stringify(session))
+      }
+
+      showMessage('Dados da empresa atualizados.', 'success')
+      editingCompanyId.value = null
+    }
+  } catch (err) {
+    console.error('Erro ao atualizar empresa:', err)
+    showMessage('Erro ao salvar alterações.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleCancelSubscription = async (subscriptionId?: string): Promise<void> => {
+  if (!subscriptionId) return
 
   if (
     !confirm(
-      'Tem certeza que deseja cancelar sua assinatura? O acesso ao sistema será interrompido após o período atual.'
+      'Tem certeza que deseja cancelar esta assinatura? O acesso ao sistema para esta empresa será interrompido após o período atual.'
     )
   )
     return
 
   isLoading.value = true
   try {
-    const result = await window.api.asaas.cancelSubscription(currentUser.value.asaasSubscriptionId)
+    const result = await window.api.asaas.cancelSubscription(subscriptionId)
     if (result.success) {
-      const updatedUser = {
-        ...currentUser.value,
-        status: 'inactive' as const,
-        updatedAt: new Date().toISOString()
+      // Encontrar e atualizar a empresa na lista e no banco
+      const company = companies.value.find((c) => c.asaasSubscriptionId === subscriptionId)
+      if (company) {
+        company.paymentStatus = 'overdue' // ou inativo dependendo da lógica
+        await db.put(company)
       }
-      await db.put(updatedUser)
-      currentUser.value = updatedUser
       showMessage('Assinatura cancelada com sucesso.', 'success')
     } else {
       throw new Error(result.error)
@@ -228,9 +496,7 @@ const handleLogout = async (): Promise<void> => {
             <span class="text-white text-2xl font-black">C</span>
           </div>
           <div class="flex flex-col">
-            <span class="text-white brand-logo text-xl tracking-tight leading-4"
-              >CCA.SPLIT</span
-            >
+            <span class="text-white brand-logo text-xl tracking-tight leading-4">CCA.SPLIT</span>
             <span
               class="text-[10px] text-[var(--metronic-sidebar-text)] font-bold uppercase tracking-[0.2em] opacity-40 mt-1"
               >HUB CORPORATIVO</span
@@ -238,6 +504,8 @@ const handleLogout = async (): Promise<void> => {
           </div>
         </router-link>
       </div>
+
+      <CompanySwitcher />
 
       <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-sidebar-scroll">
         <router-link
@@ -529,57 +797,234 @@ const handleLogout = async (): Promise<void> => {
 
             <!-- Tab: Assinatura -->
             <div v-else-if="activeTab === 'subscription'" class="p-10 space-y-8 animate-fade-in">
-              <div>
-                <h4 class="text-xl font-black text-slate-800 tracking-tight">Sua Assinatura</h4>
-                <p class="text-slate-400 text-sm font-medium">
-                  Gerencie seu plano e pagamentos via Asaas.
-                </p>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-2xl font-black text-slate-900 tracking-tight">
+                    Suas Assinaturas e Empresas
+                  </h3>
+                  <p class="text-slate-500 font-medium mt-1">
+                    Gerencie os planos e pagamentos (via Asaas) de todas as empresas sob sua gestão.
+                  </p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
+                    :class="{ 'animate-spin': isLoading }"
+                    title="Sincronizar com Asaas"
+                    @click="syncAsaasStatus"
+                  >
+                    <RefreshCcw :size="16" />
+                    Sincronizar Status
+                  </button>
+                  <button
+                    v-if="!isAddingCompany"
+                    class="bg-[#009ef7] hover:bg-[#008be0] text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
+                    @click="isAddingCompany = true"
+                  >
+                    <CreditCard :size="16" />
+                    + Adicionar Empresa
+                  </button>
+                </div>
               </div>
 
+              <!-- Formulário de Nova Empresa (Inline Modal) -->
               <div
-                class="bg-slate-50 rounded-3xl p-8 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6"
+                v-if="isAddingCompany"
+                class="bg-blue-50/50 rounded-3xl p-8 border border-blue-100 flex flex-col gap-6 animate-fade-in"
               >
-                <div class="flex items-center gap-6">
-                  <div
-                    class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white"
-                  >
-                    <CreditCard :size="32" />
+                <div class="mb-8">
+                  <h3 class="text-xl font-black text-slate-900">
+                    Cadastre uma nova empresa e gere a assinatura.
+                  </h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div class="space-y-3">
+                    <label class="text-xs font-black uppercase tracking-widest text-slate-400">
+                      Razão Social / Nome
+                    </label>
+                    <input
+                      v-model="newCompanyForm.name"
+                      type="text"
+                      class="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    />
                   </div>
-                  <div>
-                    <p
-                      class="text-xs font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 inline-block mb-1"
-                    >
-                      Plano Profissional
-                    </p>
-                    <p class="text-2xl font-black text-slate-900">
-                      R$ 55,00<span class="text-xs font-bold text-slate-400 ml-1">/mês</span>
-                    </p>
-                    <p class="text-sm font-bold text-slate-500 mt-1">
-                      Status:
-                      <span class="text-[var(--metronic-success)] uppercase text-xs">{{
-                        currentUser?.status === 'active' ? 'Ativo' : 'Inativo'
-                      }}</span>
-                    </p>
+                  <div class="space-y-3">
+                    <label class="text-xs font-black uppercase tracking-widest text-slate-400">
+                      CNPJ / CPF
+                    </label>
+                    <input
+                      v-model="newCompanyForm.cnpj"
+                      class="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all"
+                      type="text"
+                      maxlength="18"
+                      @input="handleCnpjInput($event, 'new')"
+                    />
                   </div>
                 </div>
-
-                <div class="flex flex-col gap-3 w-full md:w-auto">
-                  <a
-                    v-if="currentUser?.asaasInvoiceUrl"
-                    :href="currentUser.asaasInvoiceUrl"
-                    target="_blank"
-                    class="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                  >
-                    Ver Fatura Atual
-                    <ExternalLink :size="16" />
-                  </a>
+                <div class="flex gap-4 justify-end mt-2">
                   <button
-                    :disabled="isLoading || currentUser?.status !== 'active'"
-                    class="text-[var(--metronic-danger)] hover:bg-[var(--metronic-danger-light)] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all border border-transparent hover:border-[var(--metronic-danger)]"
-                    @click="handleCancelSubscription"
+                    class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+                    @click="isAddingCompany = false"
                   >
-                    Cancelar Assinatura
+                    Cancelar
                   </button>
+                  <button
+                    :disabled="isLoading"
+                    class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 transition-all flex items-center gap-2"
+                    @click="handleAddCompany"
+                  >
+                    Confirmar e Gerar Assinatura
+                  </button>
+                </div>
+              </div>
+
+              <!-- Lista de Empresas -->
+              <div class="space-y-6">
+                <div
+                  v-for="company in companies"
+                  :key="company._id"
+                  class="bg-slate-50 rounded-3xl p-8 border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6"
+                >
+                  <div class="flex items-center gap-6">
+                    <div
+                      class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white shrink-0"
+                    >
+                      <CreditCard :size="32" />
+                    </div>
+                    <div v-if="editingCompanyId === company._id" class="flex-1 space-y-4">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black uppercase text-slate-400">
+                            Nome da Empresa
+                          </label>
+                          <input
+                            v-model="editCompanyForm.name"
+                            type="text"
+                            class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold"
+                          />
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black uppercase text-slate-400">
+                            CNPJ
+                          </label>
+                          <input
+                            v-model="editCompanyForm.cnpj"
+                            class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold"
+                            type="text"
+                            maxlength="18"
+                            @input="handleCnpjInput($event, 'edit')"
+                          />
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest"
+                          @click="handleUpdateCompany"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          class="bg-slate-100 text-slate-500 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest"
+                          @click="editingCompanyId = null"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else class="flex-1">
+                      <div class="flex items-center gap-3">
+                        <p
+                          class="text-xs font-black text-blue-600 uppercase tracking-widest border-b border-blue-100 inline-block mb-1"
+                        >
+                          {{ company.cnpj }}
+                        </p>
+                        <button
+                          class="text-slate-300 hover:text-blue-500 transition-colors"
+                          title="Editar Dados"
+                          @click="startEditCompany(company)"
+                        >
+                          <Pencil :size="12" />
+                        </button>
+                      </div>
+                      <h4 class="text-xl font-black text-slate-900">{{ company.name }}</h4>
+                      <div class="flex items-center gap-3 mt-1">
+                        <span class="text-[var(--metronic-primary)] font-black italic">
+                          CCA.SPLIT
+                        </span>
+                        <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
+                        <p class="text-sm font-bold text-slate-900">
+                          {{
+                            new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL'
+                            }).format(company.value || 55)
+                          }}
+                        </p>
+                        <span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
+                        <p class="text-sm font-bold text-slate-500">
+                          Status:
+                          <span
+                            class="uppercase text-xs"
+                            :class="
+                              company.paymentStatus === 'paid'
+                                ? 'text-[var(--metronic-success)]'
+                                : 'text-amber-500'
+                            "
+                          >
+                            {{ company.paymentStatus === 'paid' ? 'Ativo' : 'Pendente' }}
+                          </span>
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-6 mt-3">
+                        <div v-if="company.startDate" class="flex flex-col">
+                          <span
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+                          >
+                            Início
+                          </span>
+                          <span class="text-xs font-bold text-slate-700">
+                            {{ new Date(company.startDate).toLocaleDateString('pt-BR') }}
+                          </span>
+                        </div>
+                        <div v-if="company.nextDueDate" class="flex flex-col">
+                          <span
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+                          >
+                            Próximo Vencimento
+                          </span>
+                          <span class="text-xs font-bold text-blue-600">
+                            {{ new Date(company.nextDueDate).toLocaleDateString('pt-BR') }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-3 w-full md:w-auto">
+                    <a
+                      v-if="company.asaasInvoiceUrl"
+                      :href="company.asaasInvoiceUrl"
+                      target="_blank"
+                      class="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                    >
+                      Pagar Fatura Asaas
+                      <ExternalLink :size="16" />
+                    </a>
+                    <button
+                      v-if="company.asaasSubscriptionId"
+                      :disabled="isLoading"
+                      class="text-[var(--metronic-danger)] hover:bg-[var(--metronic-danger-light)] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all border border-transparent hover:border-[var(--metronic-danger)]"
+                      @click="handleCancelSubscription(company.asaasSubscriptionId)"
+                    >
+                      Cancelar Assinatura
+                    </button>
+                  </div>
+                </div>
+                <div
+                  v-if="companies.length === 0"
+                  class="text-center p-10 border border-dashed border-slate-200 rounded-3xl"
+                >
+                  <p class="text-slate-400 font-bold">Nenhuma empresa encontrada.</p>
                 </div>
               </div>
             </div>
