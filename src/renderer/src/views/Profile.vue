@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, Company, getWorkDB, closeSession, generateId } from '../database/pouch'
+import db, {
+  User,
+  Company,
+  closeSession,
+  generateId,
+  destroyWorkDB
+} from '../database/pouch'
 import {
   ShieldCheck,
   CreditCard,
@@ -55,6 +61,9 @@ const newCompanyForm = ref({
   name: '',
   cnpj: ''
 })
+
+// Controle de Exclusão de Hub
+const showDeleteConfirmation = ref(false)
 
 const formatCpfCnpj = (value: string): string => {
   const val = value.replace(/\D/g, '')
@@ -462,21 +471,50 @@ const handleCancelSubscription = async (subscriptionId?: string): Promise<void> 
 const handleDeleteHub = async (): Promise<void> => {
   if (!currentUser.value) return
 
-  const confirmation = prompt(
-    'ATENÇÃO: Esta ação é IRREVERSÍVEL. Todos os dados do seu Hub (clientes, contratos, pagamentos) serão apagados permanentemente. Digite "EXCLUIR" para confirmar:'
-  )
+  showDeleteConfirmation.value = true
+}
 
-  if (confirmation !== 'EXCLUIR') return
+const confirmDeleteHub = async (): Promise<void> => {
+  if (!currentUser.value) return
 
   isLoading.value = true
+  showDeleteConfirmation.value = false
   try {
-    // 1. Destruir banco de dados de trabalho (workDB)
-    const workDB = getWorkDB()
-    await workDB.destroy()
+    // 1. Buscar todas as empresas vinculadas ao usuário para limpeza total
+    const allDocs = await db.allDocs({ include_docs: true })
+    const userCompanies = allDocs.rows
+      .map((row) => row.doc as unknown as Company)
+      .filter((doc) => doc.type === 'company' && doc.userId === currentUser.value?._id)
 
-    // 2. Tentar cancelar assinatura se existir
-    if (currentUser.value.asaasSubscriptionId) {
-      await window.api.asaas.cancelSubscription(currentUser.value.asaasSubscriptionId)
+    // 2. Iterar sobre cada empresa para limpeza profunda
+    for (const company of userCompanies) {
+      console.log(`Limpando dados da empresa: ${company.name} (${company._id})`)
+
+      // 2.1 Tentar cancelar assinatura se existir
+      if (company.asaasSubscriptionId) {
+        try {
+          await window.api.asaas.cancelSubscription(company.asaasSubscriptionId)
+          console.log(`Assinatura ${company.asaasSubscriptionId} cancelada.`)
+        } catch (err) {
+          console.warn(`Falha ao cancelar assinatura ${company.asaasSubscriptionId}:`, err)
+        }
+      }
+
+      // 2.2 Destruir o banco de dados de trabalho da empresa
+      if (company.tenantId) {
+        try {
+          await destroyWorkDB(company.tenantId)
+        } catch (err) {
+          console.warn(`Falha ao destruir workDB para tenant ${company.tenantId}:`, err)
+        }
+      }
+
+      // 2.3 Remover o documento da empresa do AuthDB
+      try {
+        await db.remove(company._id, company._rev)
+      } catch (err) {
+        console.warn(`Falha ao remover doc da empresa ${company._id}:`, err)
+      }
     }
 
     // 3. Remover usuário do AuthDB
@@ -488,8 +526,8 @@ const handleDeleteHub = async (): Promise<void> => {
     await closeSession()
     router.push('/login')
   } catch (err) {
-    console.error('Erro ao excluir Hub:', err)
-    showMessage('Erro crítico ao excluir Hub. Entre em contato com o suporte.', 'error')
+    console.error('Erro crítico ao excluir Hub:', err)
+    showMessage('Erro crítico ao excluir Hub. Alguns dados podem ter permanecido.', 'error')
   } finally {
     isLoading.value = false
   }
@@ -587,14 +625,14 @@ const handleLogout = async (): Promise<void> => {
           v-if="userSession?.role === 'admin'"
           class="w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all group"
           :class="
-            activeTab === 'danger'
+            activeTab === 'account'
               ? 'bg-[#1b1b28] text-white'
               : 'text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white'
           "
-          @click="activeTab = 'danger'"
+          @click="activeTab = 'account'"
         >
-          <PhTrash :size="20" :weight="activeTab === 'danger' ? 'fill' : 'bold'" />
-          <span class="text-[13px] font-bold">Zona de Perigo</span>
+          <PhTrash :size="20" :weight="activeTab === 'account' ? 'fill' : 'bold'" />
+          <span class="text-[13px] font-bold">Encerrar Conta</span>
         </button>
       </nav>
 
@@ -1062,15 +1100,15 @@ const handleLogout = async (): Promise<void> => {
               </div>
             </div>
 
-            <!-- Tab: Danger Zone -->
-            <div v-else-if="activeTab === 'danger'" class="p-10 space-y-8 animate-fade-in">
+            <!-- Tab: Encerrar Conta -->
+            <div v-else-if="activeTab === 'account'" class="p-10 space-y-8 animate-fade-in">
               <div class="border-b border-red-50 pb-6">
                 <h4 class="text-xl font-black text-red-600 tracking-tight flex items-center gap-2">
                   <AlertTriangle :size="24" />
-                  Zona de Perigo
+                  Encerrar Conta
                 </h4>
                 <p class="text-slate-400 text-sm font-medium mt-1">
-                  Ações destrutivas e irreversíveis para o seu negócio.
+                  Gerenciamento de encerramento de conta e exclusão permanente de dados.
                 </p>
               </div>
 
@@ -1078,10 +1116,10 @@ const handleLogout = async (): Promise<void> => {
                 class="flex flex-col md:flex-row items-center justify-between p-8 rounded-3xl bg-red-50 border border-red-100 gap-6"
               >
                 <div class="space-y-1 text-center md:text-left">
-                  <h5 class="text-lg font-black text-red-900">Excluir Hub Permanentemente</h5>
+                  <h5 class="text-lg font-black text-red-900">Encerrar Hub Corporativo</h5>
                   <p class="text-sm text-red-700/60 font-medium max-w-md">
-                    Isso apagará todos os clientes, contatos, dados financeiros e sua conta de
-                    acesso. Não há como desfazer esta ação.
+                    Ao confirmar o encerramento, todos os seus dados (clientes, contratos e
+                    histórico) serão removidos permanentemente. Esta ação não pode ser desfeita.
                   </p>
                 </div>
                 <button
@@ -1090,7 +1128,7 @@ const handleLogout = async (): Promise<void> => {
                   @click="handleDeleteHub"
                 >
                   <Trash2 :size="18" />
-                  Apagar Tudo
+                  Confirmar Encerramento
                 </button>
               </div>
             </div>
@@ -1098,6 +1136,48 @@ const handleLogout = async (): Promise<void> => {
         </div>
       </div>
     </main>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <transition name="fade">
+      <div
+        v-if="showDeleteConfirmation"
+        class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm"
+      >
+        <div
+          class="bg-white rounded-[30px] w-full max-w-md p-10 shadow-2xl animate-fade-in border border-red-50"
+        >
+          <div class="flex flex-col items-center text-center space-y-6">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center">
+              <AlertTriangle :size="40" class="text-red-600" />
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="text-2xl font-black text-slate-900">Confirmar Encerramento</h3>
+              <p class="text-slate-500 text-sm font-medium">
+                Esta ação é **irreversível**. Tem certeza que deseja apagar todos os seus dados
+                permanentemente?
+              </p>
+            </div>
+
+            <div class="flex flex-col w-full gap-3 mt-6">
+              <button
+                :disabled="isLoading"
+                class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-600/20 transition-all active:scale-95"
+                @click="confirmDeleteHub"
+              >
+                Sim, Encerrar Permanentemente
+              </button>
+              <button
+                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+                @click="showDeleteConfirmation = false"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 

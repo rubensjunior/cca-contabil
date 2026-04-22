@@ -139,6 +139,15 @@ export const closeSession = async (): Promise<void> => {
   localStorage.removeItem('cca_session')
 }
 
+/**
+ * Destrói permanentemente um banco de dados de trabalho específico.
+ */
+export const destroyWorkDB = async (tenantId: string): Promise<void> => {
+  console.log(`Destruindo banco de dados de trabalho: cca_work_db_${tenantId}`)
+  const dbToDestroy = new PouchDB(`cca_work_db_${tenantId}`)
+  await dbToDestroy.destroy()
+}
+
 // Inicialização Global
 export const initializeDB = async (): Promise<void> => {
   // Reset único solicitado anteriormente (agora aplicado ao authDB se necessário)
