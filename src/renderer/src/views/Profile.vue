@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, {
-  User,
-  Company,
-  closeSession,
-  generateId,
-  destroyWorkDB
-} from '../database/pouch'
+import db, { User, Company, closeSession, generateId, destroyWorkDB } from '../database/pouch'
 import {
   ShieldCheck,
   CreditCard,
@@ -511,15 +505,20 @@ const confirmDeleteHub = async (): Promise<void> => {
 
       // 2.3 Remover o documento da empresa do AuthDB
       try {
-        await db.remove(company._id, company._rev)
+        const cId = company._id
+        const cRev = company._rev
+        if (cId && cRev) {
+          await db.remove(cId, cRev)
+        }
       } catch (err) {
         console.warn(`Falha ao remover doc da empresa ${company._id}:`, err)
       }
     }
 
     // 3. Remover usuário do AuthDB
-    if (currentUser.value?._id && currentUser.value?._rev) {
-      await db.remove(currentUser.value._id, currentUser.value._rev)
+    const userDoc = currentUser.value
+    if (userDoc && userDoc._id && userDoc._rev) {
+      await db.remove(userDoc._id, userDoc._rev)
     }
 
     // 4. Limpar sessão e sair

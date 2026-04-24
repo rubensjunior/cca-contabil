@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
-import { BarChart3, Compass, HelpCircle, User } from 'lucide-vue-next'
+import { BarChart3, Compass, HelpCircle, User, Users } from 'lucide-vue-next'
 import OnboardingWizard from '../components/OnboardingWizard.vue'
 import CompanySwitcher from '../components/CompanySwitcher.vue'
 
@@ -101,116 +101,41 @@ const handleOpenOnboarding = (): void => {
 
       <!-- Scrollable Menu -->
       <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-sidebar-scroll">
-        <!-- Quick Tasks -->
-        <div
-          class="flex items-center justify-between px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white cursor-pointer transition-all group"
+        <router-link
+          to="/dashboard"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl bg-[#1b1b28] text-white transition-all group"
         >
-          <div class="flex items-center gap-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="opacity-50 group-hover:opacity-100"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <line x1="9" y1="3" x2="9" y2="21" />
-            </svg>
-            <span class="text-[13px] font-bold">Tasks</span>
-          </div>
-          <span class="bg-[#009ef7] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-            6
-          </span>
-        </div>
-
-        <div
-          class="flex items-center justify-between px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white cursor-pointer transition-all group"
-        >
-          <div class="flex items-center gap-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="opacity-50 group-hover:opacity-100"
-            >
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-            <span class="text-[13px] font-bold">Activities</span>
-          </div>
-          <span class="bg-[#f1416c] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-            24
-          </span>
-        </div>
+          <Compass :size="20" class="text-[var(--cca-blue)]" />
+          <span class="text-[13px] font-bold">Painel Geral</span>
+        </router-link>
 
         <div class="pt-6 pb-2 px-5">
           <p
             class="text-[10px] font-black text-[var(--metronic-sidebar-text)] uppercase tracking-[0.2em] opacity-20"
           >
-            Dashboards
+            Gestão
           </p>
         </div>
 
-        <!-- Dashboard Submenu -->
-        <div class="space-y-1">
-          <div
-            class="flex items-center justify-between px-5 py-3 rounded-xl bg-[#1b1b28] text-white cursor-default"
-          >
-            <div class="flex items-center gap-4">
-              <Compass :size="20" class="text-[var(--cca-blue)]" />
-              <span class="text-[13px] font-bold">Panorama Geral</span>
-            </div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="opacity-50"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-
-          <div class="pl-[52px] space-y-1 pr-4">
-            <div
-              class="py-2.5 text-[13px] text-[var(--metronic-sidebar-text)] hover:text-white cursor-not-allowed opacity-50 flex items-center gap-3"
-            >
-              <div class="w-1.5 h-1.5 rounded-full bg-current opacity-30"></div>
-              Relatórios Financeiros
-            </div>
-            <div
-              class="py-2.5 text-[13px] text-[var(--metronic-sidebar-text)] hover:text-white cursor-not-allowed opacity-50 flex items-center gap-3"
-            >
-              <div class="w-1.5 h-1.5 rounded-full bg-current opacity-30"></div>
-              Gestão de Clientes
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="pt-6 pb-2 px-5 font-black text-[10px] text-[var(--metronic-sidebar-text)] uppercase tracking-[0.2em] opacity-20"
+        <router-link
+          to="/dashboard/partners"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
         >
-          Configurações
+          <Users :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
+          <span class="text-[13px] font-bold">Parceiros</span>
+        </router-link>
+
+        <div class="pt-6 pb-2 px-5">
+          <p
+            class="text-[10px] font-black text-[var(--metronic-sidebar-text)] uppercase tracking-[0.2em] opacity-20"
+          >
+            Configurações
+          </p>
         </div>
 
         <router-link
           to="/profile"
-          class="w-full flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
         >
           <User :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
           <span class="text-[13px] font-bold">Meu Perfil</span>
