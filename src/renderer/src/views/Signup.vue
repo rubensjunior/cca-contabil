@@ -45,6 +45,7 @@ const cpfCnpj = ref('')
 const phone = ref('')
 const email = ref('')
 const password = ref('')
+const betaCode = ref('')
 
 // Campos de Endereço
 const cep = ref('')
@@ -316,6 +317,7 @@ const handleSignup = async (): Promise<void> => {
     const tenantId = crypto.randomUUID()
 
     // 3. Criar Documento do Usuário (Admin) no AuthDB
+    const isBeta = betaCode.value.trim().toUpperCase() === 'FREE'
     const newUser: User = {
       _id: userId,
       type: 'user',
@@ -327,7 +329,7 @@ const handleSignup = async (): Promise<void> => {
       tenantId: tenantId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      paymentStatus: 'pending'
+      paymentStatus: isBeta ? 'paid' : 'pending'
     }
 
     // 3.1 Criar Documento da Empresa no AuthDB
@@ -341,7 +343,7 @@ const handleSignup = async (): Promise<void> => {
       tenantId: tenantId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      paymentStatus: 'pending'
+      paymentStatus: isBeta ? 'paid' : 'pending'
     }
 
     // 4. Inicializar Sessão de Trabalho do Tenant
@@ -375,12 +377,36 @@ const handleSignup = async (): Promise<void> => {
     await workDB.put(newConfig) // Salva no WorkDB (isolado)
 
     // 5. Integração com Asaas
-    const asaasResult = await window.api.asaas.setupPayment({
-      name: name.value,
-      email: emailNormalized,
-      cpfCnpj: cpfCnpj.value,
-      mobilePhone: phone.value
-    })
+    let asaasResult: {
+      success: boolean
+      customerId?: string
+      subscriptionId?: string
+      invoiceUrl?: string
+      error?: string
+    } = {
+      success: true,
+      customerId: '',
+      subscriptionId: '',
+      invoiceUrl: '',
+      error: ''
+    }
+
+    if (isBeta) {
+      asaasResult = {
+        success: true,
+        customerId: 'beta_customer',
+        subscriptionId: 'beta_subscription',
+        invoiceUrl: '',
+        error: ''
+      }
+    } else {
+      asaasResult = await window.api.asaas.setupPayment({
+        name: name.value,
+        email: emailNormalized,
+        cpfCnpj: cpfCnpj.value,
+        mobilePhone: phone.value
+      })
+    }
 
     if (!asaasResult.success) {
       // Se falhar o Asaas, ainda assim salvamos o user e informamos via console
@@ -434,12 +460,17 @@ const handleSignup = async (): Promise<void> => {
         company: companyName.value,
         subscriptionId: asaasResult.subscriptionId,
         invoiceUrl: asaasResult.invoiceUrl,
-        paymentStatus: 'pending'
+        paymentStatus: isBeta ? 'paid' : 'pending',
+        isPaid: isBeta
       })
     )
 
-    // 8. Redirecionar para Checkout
-    router.push('/checkout')
+    // 8. Redirecionar para Checkout ou Dashboard
+    if (isBeta) {
+      router.push('/dashboard')
+    } else {
+      router.push('/checkout')
+    }
   } catch (err: unknown) {
     console.error('Erro no cadastro:', err)
     error.value = 'Não foi possível realizar o cadastro. Tente novamente.'
@@ -633,6 +664,18 @@ const onCepInput = (e: Event): void => {
                     required
                     placeholder="••••••••"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div class="space-y-2 col-span-full mt-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1"
+                    >Código Beta / Cupom (Opcional)</label
+                  >
+                  <input
+                    v-model="betaCode"
+                    type="text"
+                    placeholder="Possui um código de convite?"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-[#009ef7] focus:ring-4 focus:ring-[#009ef7]/10 transition-all placeholder:text-slate-400 uppercase"
                   />
                 </div>
               </div>

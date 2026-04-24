@@ -82,7 +82,7 @@ const handleSavePartner = async (formData: {
   name: string
   cpfCnpj: string
   email: string
-  walletId?: string
+  walletId: string
 }): Promise<void> => {
   try {
     const workDB = getWorkDB()

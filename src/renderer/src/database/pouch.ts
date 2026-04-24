@@ -58,7 +58,7 @@ export interface Partner extends BaseDoc {
   name: string
   cpfCnpj: string
   email: string
-  walletId?: string // Asaas Wallet ID for split
+  walletId: string // Asaas Wallet ID for split
 }
 
 export interface Contract extends BaseDoc {
@@ -151,14 +151,15 @@ export const destroyWorkDB = async (tenantId: string): Promise<void> => {
 // Inicialização Global
 export const initializeDB = async (): Promise<void> => {
   // Reset único solicitado anteriormente (agora aplicado ao authDB se necessário)
-  if (!localStorage.getItem('db_reset_v2_done')) {
+  if (!localStorage.getItem('db_reset_v4_beta_test_done')) {
     console.log('Limpando sistemas para nova arquitetura de isolamento...')
     // Em Electron + PouchDB local, não temos allDbs facilmente sem plugins específicos,
     // então vamos destruir sistematicamente o que conhecemos.
     await authDB.destroy()
     await new PouchDB('cca_contabil_db').destroy()
 
-    localStorage.setItem('db_reset_v2_done', 'true')
+    localStorage.removeItem('cca_session')
+    localStorage.setItem('db_reset_v4_beta_test_done', 'true')
     window.location.reload()
     return
   }

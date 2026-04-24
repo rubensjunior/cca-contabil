@@ -63,8 +63,8 @@ const errorMessage = ref('')
 
 const handleSave = (): void => {
   errorMessage.value = ''
-  if (!form.value.name || !form.value.cpfCnpj || !form.value.email) {
-    errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.'
+  if (!form.value.name || !form.value.cpfCnpj || !form.value.email || !form.value.walletId) {
+    errorMessage.value = 'Por favor, preencha todos os campos obrigatórios, incluindo o Wallet ID.'
     return
   }
   emit('save', { ...form.value })
@@ -164,7 +164,7 @@ const handleSave = (): void => {
             <input
               v-model="form.walletId"
               type="text"
-              placeholder="Opcional: ID da carteira para split automático"
+              placeholder="ID da carteira para split automático (Obrigatório)"
               class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all"
             />
           </div>
