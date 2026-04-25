@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { AppConfig, getWorkDB, closeSession } from '../database/pouch'
-import { BarChart3, Building2, Compass, HelpCircle, User, Users } from 'lucide-vue-next'
+import { BarChart3, Building2, Compass, HelpCircle, User, Users, DollarSign } from 'lucide-vue-next'
 import OnboardingWizard from '../components/OnboardingWizard.vue'
 import CompanySwitcher from '../components/CompanySwitcher.vue'
 
@@ -131,6 +131,14 @@ const handleOpenOnboarding = (): void => {
         >
           <Building2 :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
           <span class="text-[13px] font-bold">Clientes</span>
+        </router-link>
+
+        <router-link
+          to="/dashboard/charges"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
+        >
+          <DollarSign :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
+          <span class="text-[13px] font-bold">Cobranças</span>
         </router-link>
 
         <div class="pt-6 pb-2 px-5">

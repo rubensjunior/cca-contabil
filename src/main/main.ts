@@ -208,6 +208,46 @@ function createWindow(): void {
     }
   )
 
+  // Handler para criar cobrança no Asaas usando a chave API do ESCRITÓRIO
+  ipcMain.handle(
+    'asaas:create-client-payment',
+    async (
+      _,
+      apiKey: string,
+      data: {
+        customer: string
+        billingType: string
+        value: number
+        dueDate: string
+        description: string
+        split?: {
+          walletId: string
+          percentualValue?: number
+          fixedValue?: number
+        }[]
+      }
+    ) => {
+      try {
+        const payment = await AsaasService.createClientPayment(apiKey, data)
+        return { success: true, payment }
+      } catch (err) {
+        console.error('Erro ao criar cobrança no Asaas:', err)
+        return { success: false, error: err instanceof Error ? err.message : String(err) }
+      }
+    }
+  )
+
+  // Handler para listar cobranças do escritório
+  ipcMain.handle('asaas:list-client-payments', async (_, apiKey: string) => {
+    try {
+      const payments = await AsaasService.listClientPayments(apiKey)
+      return { success: true, payments }
+    } catch (err) {
+      console.error('Erro ao listar cobranças no Asaas:', err)
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()
     mainWindow.show()

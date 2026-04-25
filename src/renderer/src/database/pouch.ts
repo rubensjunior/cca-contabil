@@ -1,7 +1,7 @@
 import PouchDB from 'pouchdb'
 
 // Tipos de Documentos
-export type DocType = 'user' | 'client' | 'partner' | 'contract' | 'payment' | 'config' | 'company'
+export type DocType = 'user' | 'client' | 'partner' | 'contract' | 'payment' | 'config' | 'company' | 'charge'
 
 export interface BaseDoc {
   _id: string
@@ -79,6 +79,24 @@ export interface Contract extends BaseDoc {
   hubPercentage: number
   partnerPercentage: number
   status: 'active' | 'inactive'
+}
+
+export interface Charge extends BaseDoc {
+  type: 'charge'
+  clientId: string
+  clientName: string
+  value: number
+  dueDate: string
+  description: string
+  billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX' | 'UNDEFINED'
+  asaasId?: string
+  invoiceUrl?: string
+  status: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'CANCELLED' | 'REFUNDED'
+  split?: {
+    walletId: string
+    percentualValue?: number
+    fixedValue?: number
+  }[]
 }
 
 export interface AppConfig extends BaseDoc {

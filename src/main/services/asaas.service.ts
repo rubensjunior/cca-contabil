@@ -235,5 +235,56 @@ export const AsaasService = {
       throw new Error(result.errors[0].description)
     }
     return result
+  },
+
+  /**
+   * Cria uma cobrança no Asaas usando a chave API do ESCRITÓRIO.
+   */
+  async createClientPayment(
+    apiKey: string,
+    data: {
+      customer: string
+      billingType: string
+      value: number
+      dueDate: string
+      description: string
+      split?: {
+        walletId: string
+        percentualValue?: number
+        fixedValue?: number
+      }[]
+    }
+  ): Promise<AsaasPayment> {
+    const response = await fetch(`${ASAAS_API_URL}/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        access_token: apiKey
+      },
+      body: JSON.stringify(data)
+    })
+
+    const result = (await response.json()) as AsaasPayment & AsaasErrorResponse
+    if (result.errors) {
+      throw new Error(result.errors[0].description)
+    }
+    return result
+  },
+
+  /**
+   * Lista as cobranças de um escritório.
+   */
+  async listClientPayments(apiKey: string): Promise<AsaasPayment[]> {
+    const response = await fetch(`${ASAAS_API_URL}/payments?limit=100`, {
+      headers: {
+        access_token: apiKey
+      }
+    })
+
+    const data = (await response.json()) as AsaasListResponse<AsaasPayment> & AsaasErrorResponse
+    if (data.errors) {
+      throw new Error(data.errors[0].description)
+    }
+    return data.data || []
   }
 }

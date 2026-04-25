@@ -64,6 +64,32 @@ declare global {
           customerName?: string
           error?: string
         }>
+        createClientPayment: (
+          apiKey: string,
+          data: {
+            customer: string
+            billingType: string
+            value: number
+            dueDate: string
+            description: string
+            split?: {
+              walletId: string
+              percentualValue?: number
+              fixedValue?: number
+            }[]
+          }
+        ) => Promise<{
+          success: boolean
+          payment?: any
+          error?: string
+        }>
+        listClientPayments: (
+          apiKey: string
+        ) => Promise<{
+          success: boolean
+          payments?: any[]
+          error?: string
+        }>
       }
     }
   }

@@ -8,6 +8,7 @@ import InternalSales from '../views/InternalSales.vue'
 import Profile from '../views/Profile.vue'
 import Partners from '../views/Partners.vue'
 import Clients from '../views/Clients.vue'
+import Charges from '../views/Charges.vue'
 
 import { routerState } from './routerState'
 
@@ -43,6 +44,12 @@ const routes = [
     path: '/dashboard/clients',
     name: 'Clients',
     component: Clients,
+    meta: { requiresAuth: true, requiresPayment: true }
+  },
+  {
+    path: '/dashboard/charges',
+    name: 'Charges',
+    component: Charges,
     meta: { requiresAuth: true, requiresPayment: true }
   },
   {

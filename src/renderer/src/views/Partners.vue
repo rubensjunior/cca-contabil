@@ -13,7 +13,8 @@ import {
   Building2,
   CreditCard,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  DollarSign
 } from 'lucide-vue-next'
 import PartnerModal from '../components/PartnerModal.vue'
 import CompanySwitcher from '../components/CompanySwitcher.vue'
@@ -199,6 +200,14 @@ const filteredPartners = (): Partner[] => {
         >
           <Building2 :size="20" class="opacity-50 group-hover:opacity-100" />
           <span class="text-[13px] font-bold">Clientes</span>
+        </router-link>
+
+        <router-link
+          to="/dashboard/charges"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
+        >
+          <DollarSign :size="20" class="opacity-50 group-hover:opacity-100 transition-colors" />
+          <span class="text-[13px] font-bold">Cobranças</span>
         </router-link>
 
         <div class="pt-6 pb-2 px-5">

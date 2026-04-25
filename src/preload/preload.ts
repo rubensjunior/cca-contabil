@@ -30,7 +30,10 @@ const api = {
         cityName?: string
         state?: string
       }
-    ) => ipcRenderer.invoke('asaas:create-client-customer', apiKey, data)
+    ) => ipcRenderer.invoke('asaas:create-client-customer', apiKey, data),
+    createClientPayment: (apiKey: string, data: any) =>
+      ipcRenderer.invoke('asaas:create-client-payment', apiKey, data),
+    listClientPayments: (apiKey: string) => ipcRenderer.invoke('asaas:list-client-payments', apiKey)
   }
 }
 
