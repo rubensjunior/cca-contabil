@@ -3,7 +3,9 @@ import squirrelStartup from 'electron-squirrel-startup'
 if (squirrelStartup) app.quit()
 
 import { updateElectronApp } from 'update-electron-app'
-updateElectronApp()
+if (app.isPackaged) {
+  updateElectronApp()
+}
 
 import { join } from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
