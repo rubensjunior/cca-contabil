@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-if (require('electron-squirrel-startup')) app.quit()
+import squirrelStartup from 'electron-squirrel-startup'
+if (squirrelStartup) app.quit()
 
 import { updateElectronApp } from 'update-electron-app'
 updateElectronApp()
