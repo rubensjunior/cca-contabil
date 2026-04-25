@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import db, { User, Company, closeSession, generateId, destroyWorkDB } from '../database/pouch'
+import db, {
+  User,
+  Company,
+  AppConfig,
+  closeSession,
+  generateId,
+  destroyWorkDB,
+  getWorkDB
+} from '../database/pouch'
 import {
   ShieldCheck,
   CreditCard,
@@ -11,7 +19,8 @@ import {
   AlertTriangle,
   ExternalLink,
   RefreshCcw,
-  Pencil
+  Pencil,
+  Key
 } from 'lucide-vue-next'
 import { PhUser, PhShieldCheck, PhCreditCard, PhTrash } from '@phosphor-icons/vue'
 import CompanySwitcher from '../components/CompanySwitcher.vue'
@@ -55,6 +64,23 @@ const newCompanyForm = ref({
   name: '',
   cnpj: ''
 })
+
+// Configurações do Hub (AppConfig)
+const hubConfig = ref<AppConfig | null>(null)
+const configForm = ref({
+  asaasApiKey: '',
+  companyName: '',
+  businessSegment: ''
+})
+
+const segments = [
+  { id: 'saude', label: 'Saúde & Bem-estar', icon: '🩺' },
+  { id: 'tecnologia', label: 'Tecnologia & SaaS', icon: '💻' },
+  { id: 'educacao', label: 'Educação & Cursos', icon: '🎓' },
+  { id: 'estetica', label: 'Estética & Beleza', icon: '✨' },
+  { id: 'servicos', label: 'Serviços Profissionais', icon: '🤝' },
+  { id: 'outro', label: 'Outro Segmento', icon: '🏢' }
+]
 
 // Controle de Exclusão de Hub
 const showDeleteConfirmation = ref(false)
@@ -135,12 +161,57 @@ onMounted(async () => {
 
         // Sincronizar status automaticamente ao carregar
         await syncAsaasStatus()
+
+        // Carregar configuração do Hub (se admin)
+        if (userSession.value.role === 'admin') {
+          await loadHubConfig()
+        }
       } catch (err) {
         console.error('Erro ao carregar usuário:', err)
       }
     }
   }
 })
+
+const loadHubConfig = async (): Promise<void> => {
+  try {
+    const workDB = getWorkDB()
+    const doc = await workDB.get<AppConfig>('config:main')
+    hubConfig.value = doc
+    configForm.value = {
+      asaasApiKey: doc.asaasApiKey || '',
+      companyName: doc.companyName || '',
+      businessSegment: doc.businessSegment || ''
+    }
+  } catch (err) {
+    console.error('Erro ao carregar configurações do Hub:', err)
+  }
+}
+
+const handleSaveConfig = async (): Promise<void> => {
+  if (!hubConfig.value) return
+
+  isLoading.value = true
+  try {
+    const workDB = getWorkDB()
+    const updatedConfig = {
+      ...hubConfig.value,
+      asaasApiKey: configForm.value.asaasApiKey,
+      companyName: configForm.value.companyName,
+      businessSegment: configForm.value.businessSegment,
+      updatedAt: new Date().toISOString()
+    }
+    await workDB.put(updatedConfig)
+    hubConfig.value = updatedConfig
+
+    showMessage('Configurações do Hub atualizadas com sucesso!', 'success')
+  } catch (err) {
+    console.error('Erro ao salvar configurações do Hub:', err)
+    showMessage('Erro ao salvar as configurações.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const syncAsaasStatus = async (): Promise<void> => {
   if (companies.value.length === 0) return
@@ -619,6 +690,25 @@ const handleLogout = async (): Promise<void> => {
           <PhCreditCard :size="20" :weight="activeTab === 'subscription' ? 'fill' : 'bold'" />
           <span class="text-[13px] font-bold">Assinatura</span>
         </button>
+        <button
+          v-if="userSession?.role === 'admin'"
+          class="w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all group"
+          :class="
+            activeTab === 'integrations'
+              ? 'bg-[#1b1b28] text-white'
+              : 'text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white'
+          "
+          @click="activeTab = 'integrations'"
+        >
+          <Key
+            :size="20"
+            class="transition-all"
+            :class="
+              activeTab === 'integrations' ? 'text-white' : 'opacity-50 group-hover:opacity-100'
+            "
+          />
+          <span class="text-[13px] font-bold">Integrações</span>
+        </button>
 
         <button
           v-if="userSession?.role === 'admin'"
@@ -1095,6 +1185,108 @@ const handleLogout = async (): Promise<void> => {
                   class="text-center p-10 border border-dashed border-slate-200 rounded-3xl"
                 >
                   <p class="text-slate-400 font-bold">Nenhuma empresa encontrada.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Integrações -->
+            <div v-else-if="activeTab === 'integrations'" class="p-10 space-y-8 animate-fade-in">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-xl font-black text-slate-800 tracking-tight">
+                    Configurações do Hub
+                  </h4>
+                  <p class="text-slate-400 text-sm font-medium">
+                    Configure as chaves de API e os dados básicos da sua operação.
+                  </p>
+                </div>
+                <button
+                  :disabled="isLoading"
+                  class="bg-[#009ef7] hover:bg-[#008be0] text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
+                  @click="handleSaveConfig"
+                >
+                  <Save :size="16" />
+                  Salvar Configurações
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Razão Social do Hub -->
+                <div class="space-y-3">
+                  <label class="text-xs font-black uppercase tracking-widest text-slate-400">
+                    Razão Social do Hub
+                  </label>
+                  <input
+                    v-model="configForm.companyName"
+                    type="text"
+                    placeholder="Ex: CCA Contabilidade"
+                    class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  />
+                </div>
+
+                <!-- Chave de API Asaas -->
+                <div class="space-y-3">
+                  <label class="text-xs font-black uppercase tracking-widest text-slate-400">
+                    Chave de API Asaas (Produção)
+                  </label>
+                  <div class="relative group">
+                    <input
+                      v-model="configForm.asaasApiKey"
+                      type="password"
+                      placeholder="$asaas_live_..."
+                      class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-slate-900 font-mono text-sm focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    />
+                    <div
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"
+                    >
+                      <Key :size="18" />
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-slate-400">
+                    Esta chave é usada para gerar as cobranças e gerenciar seus clientes.
+                  </p>
+                </div>
+
+                <!-- Segmento de Negócio -->
+                <div class="col-span-1 md:col-span-2 space-y-4">
+                  <label class="text-xs font-black uppercase tracking-widest text-slate-400">
+                    Segmento de Negócio
+                  </label>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <button
+                      v-for="segment in segments"
+                      :key="segment.id"
+                      class="flex flex-col items-center p-6 rounded-3xl border-2 transition-all text-center group"
+                      :class="[
+                        configForm.businessSegment === segment.id
+                          ? 'border-[#009ef7] bg-blue-50 shadow-lg shadow-[#009ef7]/10'
+                          : 'border-slate-50 hover:border-slate-200 bg-slate-50/50'
+                      ]"
+                      @click="configForm.businessSegment = segment.id"
+                    >
+                      <span class="text-3xl mb-3 group-hover:scale-110 transition-transform">{{
+                        segment.icon
+                      }}</span>
+                      <span class="text-xs font-bold text-slate-700">{{ segment.label }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Info Card -->
+              <div class="p-8 rounded-3xl bg-blue-50 border border-blue-100 flex items-start gap-4">
+                <div
+                  class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0"
+                >
+                  <ExternalLink :size="24" />
+                </div>
+                <div class="space-y-1">
+                  <h5 class="text-sm font-black text-blue-900">Precisa de ajuda?</h5>
+                  <p class="text-xs text-blue-700/70 font-medium">
+                    A chave de API pode ser encontrada no painel do Asaas em
+                    <strong>Configurações > Integrações</strong>. Certifique-se de usar a chave de
+                    <strong>Produção</strong> para operações reais.
+                  </p>
                 </div>
               </div>
             </div>
