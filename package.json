@@ -1,6 +1,6 @@
 {
   "name": "cca-contabil",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "An Electron application with Vue and TypeScript",
   "repository": "https://github.com/rubensjunior/cca-contabil",
   "main": ".vite/build/main.js",
