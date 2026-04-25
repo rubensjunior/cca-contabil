@@ -1,6 +1,9 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 if (require('electron-squirrel-startup')) app.quit()
 
+import { updateElectronApp } from 'update-electron-app'
+updateElectronApp()
+
 import { join } from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
