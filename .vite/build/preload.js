@@ -1,1 +1,107 @@
-"use strict";const r=require("electron");var c={};const i={ipcRenderer:{send(e,...n){r.ipcRenderer.send(e,...n)},sendTo(e,n,...o){const s=process.versions.electron;if((s?parseInt(s.split(".")[0]):0)>=28)throw new Error('"sendTo" method has been removed since Electron 28.');r.ipcRenderer.sendTo(e,n,...o)},sendSync(e,...n){return r.ipcRenderer.sendSync(e,...n)},sendToHost(e,...n){r.ipcRenderer.sendToHost(e,...n)},postMessage(e,n,o){r.ipcRenderer.postMessage(e,n,o)},invoke(e,...n){return r.ipcRenderer.invoke(e,...n)},on(e,n){return r.ipcRenderer.on(e,n),()=>{r.ipcRenderer.removeListener(e,n)}},once(e,n){return r.ipcRenderer.once(e,n),()=>{r.ipcRenderer.removeListener(e,n)}},removeListener(e,n){return r.ipcRenderer.removeListener(e,n),this},removeAllListeners(e){r.ipcRenderer.removeAllListeners(e)}},webFrame:{insertCSS(e){return r.webFrame.insertCSS(e)},setZoomFactor(e){typeof e=="number"&&e>0&&r.webFrame.setZoomFactor(e)},setZoomLevel(e){typeof e=="number"&&r.webFrame.setZoomLevel(e)}},webUtils:{getPathForFile(e){return r.webUtils.getPathForFile(e)}},process:{get platform(){return process.platform},get versions(){return process.versions},get env(){return{...c}}}},t={version:"1.0.0",getVersion:()=>r.ipcRenderer.invoke("get-app-version"),minimize:()=>r.ipcRenderer.send("window-minimize"),maximize:()=>r.ipcRenderer.send("window-maximize"),close:()=>r.ipcRenderer.send("window-close"),asaas:{setupPayment:e=>r.ipcRenderer.invoke("asaas:setup-payment",e),getSubscriptionStatus:e=>r.ipcRenderer.invoke("asaas:get-subscription-status",e),getInvoiceUrl:e=>r.ipcRenderer.invoke("asaas:get-invoice-url",e),cancelSubscription:e=>r.ipcRenderer.invoke("asaas:cancel-subscription",e),checkCustomer:e=>r.ipcRenderer.invoke("asaas:check-customer",e)}};if(process.contextIsolated)try{r.contextBridge.exposeInMainWorld("electron",i),r.contextBridge.exposeInMainWorld("api",t)}catch(e){console.error(e)}else window.electron=i,window.api=t;
+"use strict";
+const electron = require("electron");
+var define_process_env_default = {};
+const electronAPI = {
+  ipcRenderer: {
+    send(channel, ...args) {
+      electron.ipcRenderer.send(channel, ...args);
+    },
+    sendTo(webContentsId, channel, ...args) {
+      const electronVer = process.versions.electron;
+      const electronMajorVer = electronVer ? parseInt(electronVer.split(".")[0]) : 0;
+      if (electronMajorVer >= 28) {
+        throw new Error('"sendTo" method has been removed since Electron 28.');
+      } else {
+        electron.ipcRenderer.sendTo(webContentsId, channel, ...args);
+      }
+    },
+    sendSync(channel, ...args) {
+      return electron.ipcRenderer.sendSync(channel, ...args);
+    },
+    sendToHost(channel, ...args) {
+      electron.ipcRenderer.sendToHost(channel, ...args);
+    },
+    postMessage(channel, message, transfer) {
+      electron.ipcRenderer.postMessage(channel, message, transfer);
+    },
+    invoke(channel, ...args) {
+      return electron.ipcRenderer.invoke(channel, ...args);
+    },
+    on(channel, listener) {
+      electron.ipcRenderer.on(channel, listener);
+      return () => {
+        electron.ipcRenderer.removeListener(channel, listener);
+      };
+    },
+    once(channel, listener) {
+      electron.ipcRenderer.once(channel, listener);
+      return () => {
+        electron.ipcRenderer.removeListener(channel, listener);
+      };
+    },
+    removeListener(channel, listener) {
+      electron.ipcRenderer.removeListener(channel, listener);
+      return this;
+    },
+    removeAllListeners(channel) {
+      electron.ipcRenderer.removeAllListeners(channel);
+    }
+  },
+  webFrame: {
+    insertCSS(css) {
+      return electron.webFrame.insertCSS(css);
+    },
+    setZoomFactor(factor) {
+      if (typeof factor === "number" && factor > 0) {
+        electron.webFrame.setZoomFactor(factor);
+      }
+    },
+    setZoomLevel(level) {
+      if (typeof level === "number") {
+        electron.webFrame.setZoomLevel(level);
+      }
+    }
+  },
+  webUtils: {
+    getPathForFile(file) {
+      return electron.webUtils.getPathForFile(file);
+    }
+  },
+  process: {
+    get platform() {
+      return process.platform;
+    },
+    get versions() {
+      return process.versions;
+    },
+    get env() {
+      return { ...define_process_env_default };
+    }
+  }
+};
+const api = {
+  version: "1.0.0",
+  // Fallback
+  getVersion: () => electron.ipcRenderer.invoke("get-app-version"),
+  minimize: () => electron.ipcRenderer.send("window-minimize"),
+  maximize: () => electron.ipcRenderer.send("window-maximize"),
+  close: () => electron.ipcRenderer.send("window-close"),
+  asaas: {
+    setupPayment: (data) => electron.ipcRenderer.invoke("asaas:setup-payment", data),
+    getSubscriptionStatus: (id) => electron.ipcRenderer.invoke("asaas:get-subscription-status", id),
+    getInvoiceUrl: (id) => electron.ipcRenderer.invoke("asaas:get-invoice-url", id),
+    cancelSubscription: (id) => electron.ipcRenderer.invoke("asaas:cancel-subscription", id),
+    checkCustomer: (cpfCnpj) => electron.ipcRenderer.invoke("asaas:check-customer", cpfCnpj)
+  }
+};
+if (process.contextIsolated) {
+  try {
+    electron.contextBridge.exposeInMainWorld("electron", electronAPI);
+    electron.contextBridge.exposeInMainWorld("api", api);
+  } catch (error) {
+    console.error(error);
+  }
+} else {
+  window.electron = electronAPI;
+  window.api = api;
+}
