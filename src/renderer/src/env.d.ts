@@ -43,6 +43,27 @@ declare global {
         checkCustomer: (
           cpfCnpj: string
         ) => Promise<{ success: boolean; exists?: boolean; name?: string; error?: string }>
+        createClientCustomer: (
+          apiKey: string,
+          data: {
+            name: string
+            cpfCnpj: string
+            email: string
+            mobilePhone?: string
+            address?: string
+            addressNumber?: string
+            complement?: string
+            province?: string
+            postalCode?: string
+            cityName?: string
+            state?: string
+          }
+        ) => Promise<{
+          success: boolean
+          customerId?: string
+          customerName?: string
+          error?: string
+        }>
       }
     }
   }

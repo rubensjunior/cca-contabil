@@ -7,6 +7,7 @@ import LandingPage from '../views/LandingPage.vue'
 import InternalSales from '../views/InternalSales.vue'
 import Profile from '../views/Profile.vue'
 import Partners from '../views/Partners.vue'
+import Clients from '../views/Clients.vue'
 
 import { routerState } from './routerState'
 
@@ -36,6 +37,12 @@ const routes = [
     path: '/dashboard/partners',
     name: 'Partners',
     component: Partners,
+    meta: { requiresAuth: true, requiresPayment: true }
+  },
+  {
+    path: '/dashboard/clients',
+    name: 'Clients',
+    component: Clients,
     meta: { requiresAuth: true, requiresPayment: true }
   },
   {

@@ -178,6 +178,36 @@ function createWindow(): void {
     }
   })
 
+  // Handler para criar cliente no Asaas usando a chave API do ESCRITÓRIO
+  ipcMain.handle(
+    'asaas:create-client-customer',
+    async (
+      _,
+      apiKey: string,
+      data: {
+        name: string
+        cpfCnpj: string
+        email: string
+        mobilePhone?: string
+        address?: string
+        addressNumber?: string
+        complement?: string
+        province?: string
+        postalCode?: string
+        cityName?: string
+        state?: string
+      }
+    ) => {
+      try {
+        const customer = await AsaasService.createClientCustomer(apiKey, data)
+        return { success: true, customerId: customer.id, customerName: customer.name }
+      } catch (err) {
+        console.error('Erro ao criar cliente no Asaas:', err)
+        return { success: false, error: err instanceof Error ? err.message : String(err) }
+      }
+    }
+  )
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()
     mainWindow.show()

@@ -44,12 +44,23 @@ export interface User extends BaseDoc {
   nextDueDate?: string
 }
 
+export interface ClientAddress {
+  cep: string
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+}
+
 export interface Client extends BaseDoc {
   type: 'client'
   name: string
-  cnpj: string
+  cpfCnpj: string
   email: string
-  phone?: string
+  phone: string
+  address: ClientAddress
   asaasCustomerId?: string
 }
 

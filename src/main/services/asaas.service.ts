@@ -193,5 +193,47 @@ export const AsaasService = {
     if (result.deleted === false && result.errors) {
       throw new Error(result.errors[0].description)
     }
+  },
+
+  /**
+   * Cria um cliente no Asaas usando a chave API do ESCRITÓRIO (não a da plataforma).
+   * Essa separação é crucial: a chave da plataforma (.env) gerencia assinaturas do software,
+   * enquanto a chave do escritório gerencia os clientes do próprio escritório.
+   */
+  async createClientCustomer(
+    apiKey: string,
+    data: {
+      name: string
+      cpfCnpj: string
+      email: string
+      mobilePhone?: string
+      address?: string
+      addressNumber?: string
+      complement?: string
+      province?: string
+      postalCode?: string
+      cityName?: string
+      state?: string
+    }
+  ): Promise<AsaasCustomer> {
+    const response = await fetch(`${ASAAS_API_URL}/customers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        access_token: apiKey
+      },
+      body: JSON.stringify({
+        ...data,
+        cpfCnpj: data.cpfCnpj.replace(/\D/g, ''),
+        postalCode: data.postalCode?.replace(/\D/g, ''),
+        mobilePhone: data.mobilePhone?.replace(/\D/g, '')
+      })
+    })
+
+    const result = (await response.json()) as AsaasCustomer & AsaasErrorResponse
+    if (result.errors) {
+      throw new Error(result.errors[0].description)
+    }
+    return result
   }
 }

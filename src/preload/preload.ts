@@ -14,7 +14,23 @@ const api = {
     getSubscriptionStatus: (id: string) => ipcRenderer.invoke('asaas:get-subscription-status', id),
     getInvoiceUrl: (id: string) => ipcRenderer.invoke('asaas:get-invoice-url', id),
     cancelSubscription: (id: string) => ipcRenderer.invoke('asaas:cancel-subscription', id),
-    checkCustomer: (cpfCnpj: string) => ipcRenderer.invoke('asaas:check-customer', cpfCnpj)
+    checkCustomer: (cpfCnpj: string) => ipcRenderer.invoke('asaas:check-customer', cpfCnpj),
+    createClientCustomer: (
+      apiKey: string,
+      data: {
+        name: string
+        cpfCnpj: string
+        email: string
+        mobilePhone?: string
+        address?: string
+        addressNumber?: string
+        complement?: string
+        province?: string
+        postalCode?: string
+        cityName?: string
+        state?: string
+      }
+    ) => ipcRenderer.invoke('asaas:create-client-customer', apiKey, data)
   }
 }
 

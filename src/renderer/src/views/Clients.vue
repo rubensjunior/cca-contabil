@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Partner, getWorkDB, closeSession, generateId } from '../database/pouch'
+import { Client, AppConfig, getWorkDB, closeSession, generateId } from '../database/pouch'
 import {
+  Building2,
   Users,
   Search,
   Plus,
@@ -10,21 +11,24 @@ import {
   Trash2,
   Home,
   User as UserIcon,
-  Building2,
-  CreditCard,
+  MapPin,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Key,
+  HelpCircle
 } from 'lucide-vue-next'
-import PartnerModal from '../components/PartnerModal.vue'
+import ClientModal from '../components/ClientModal.vue'
 import CompanySwitcher from '../components/CompanySwitcher.vue'
 
 const router = useRouter()
-const partners = ref<Partner[]>([])
+const clients = ref<Client[]>([])
 const searchQuery = ref('')
 const showModal = ref(false)
-const selectedPartner = ref<Partner | null>(null)
+const selectedClient = ref<Client | null>(null)
 const isLoading = ref(false)
 const message = ref({ text: '', type: '' as 'success' | 'error' | '' })
+const config = ref<AppConfig | null>(null)
+const hasApiKey = ref(false)
 
 const showMessage = (text: string, type: 'success' | 'error'): void => {
   message.value = { text, type }
@@ -46,16 +50,28 @@ const handleLogout = async (): Promise<void> => {
   router.push('/login')
 }
 
-const loadPartners = async (): Promise<void> => {
+const loadConfig = async (): Promise<void> => {
+  try {
+    const workDB = getWorkDB()
+    const doc = await workDB.get<AppConfig>('config:main')
+    config.value = doc
+    hasApiKey.value = !!doc.asaasApiKey && doc.asaasApiKey.trim().length > 0
+  } catch {
+    console.warn('Config não encontrada no banco de trabalho')
+    hasApiKey.value = false
+  }
+}
+
+const loadClients = async (): Promise<void> => {
   isLoading.value = true
   try {
     const workDB = getWorkDB()
     const result = await workDB.allDocs({ include_docs: true })
-    partners.value = result.rows
-      .map((row) => row.doc as unknown as Partner)
-      .filter((doc) => doc.type === 'partner')
+    clients.value = result.rows
+      .map((row) => row.doc as unknown as Client)
+      .filter((doc) => doc.type === 'client')
   } catch (err) {
-    console.error('Erro ao carregar parceiros:', err)
+    console.error('Erro ao carregar clientes:', err)
   } finally {
     isLoading.value = false
   }
@@ -66,80 +82,96 @@ onMounted(async () => {
   if (session) {
     user.value = JSON.parse(session)
   }
-  await loadPartners()
+  await loadConfig()
+  await loadClients()
 })
 
 const openAddModal = (): void => {
-  selectedPartner.value = null
+  if (!hasApiKey.value) return
+  selectedClient.value = null
   showModal.value = true
 }
 
-const openEditModal = (partner: Partner): void => {
-  selectedPartner.value = partner
+const openEditModal = (client: Client): void => {
+  selectedClient.value = client
   showModal.value = true
 }
 
-const handleSavePartner = async (formData: {
+const handleSaveClient = async (formData: {
   name: string
   cpfCnpj: string
   email: string
-  walletId: string
+  phone: string
+  address: {
+    cep: string
+    street: string
+    number: string
+    complement?: string
+    neighborhood: string
+    city: string
+    state: string
+  }
+  asaasCustomerId?: string
 }): Promise<void> => {
   try {
     const workDB = getWorkDB()
     const now = new Date().toISOString()
 
-    if (selectedPartner.value) {
+    if (selectedClient.value) {
       // Editar
-      const updatedPartner = {
-        ...selectedPartner.value,
+      const updatedClient = {
+        ...selectedClient.value,
         ...formData,
         updatedAt: now
       }
-      await workDB.put(updatedPartner)
-      showMessage('Parceiro atualizado com sucesso!', 'success')
+      await workDB.put(updatedClient)
+      showMessage('Cliente atualizado com sucesso!', 'success')
     } else {
       // Criar
-      const newPartner: Partner = {
-        _id: generateId('partner'),
-        type: 'partner',
+      const newClient: Client = {
+        _id: generateId('client'),
+        type: 'client',
         ...formData,
         createdAt: now,
         updatedAt: now
       }
-      await workDB.put(newPartner)
-      showMessage('Novo parceiro cadastrado!', 'success')
+      await workDB.put(newClient)
+      showMessage('Novo cliente cadastrado e criado no Asaas!', 'success')
     }
 
     showModal.value = false
-    await loadPartners()
+    await loadClients()
   } catch (err) {
-    console.error('Erro ao salvar parceiro:', err)
-    showMessage('Erro ao salvar parceiro. Tente novamente.', 'error')
+    console.error('Erro ao salvar cliente:', err)
+    showMessage('Erro ao salvar cliente. Tente novamente.', 'error')
   }
 }
 
-const handleDeletePartner = async (partner: Partner): Promise<void> => {
-  if (!confirm(`Tem certeza que deseja excluir o parceiro ${partner.name}?`)) return
+const handleDeleteClient = async (client: Client): Promise<void> => {
+  if (!confirm(`Tem certeza que deseja excluir o cliente ${client.name}?`)) return
 
   try {
     const workDB = getWorkDB()
-    await workDB.remove(partner._id, partner._rev!)
-    showMessage('Parceiro excluído com sucesso.', 'success')
-    await loadPartners()
+    await workDB.remove(client._id, client._rev!)
+    showMessage('Cliente excluído com sucesso.', 'success')
+    await loadClients()
   } catch (err) {
-    console.error('Erro ao excluir parceiro:', err)
-    showMessage('Erro ao excluir parceiro.', 'error')
+    console.error('Erro ao excluir cliente:', err)
+    showMessage('Erro ao excluir cliente.', 'error')
   }
 }
 
-const filteredPartners = (): Partner[] => {
-  if (!searchQuery.value) return partners.value
+const filteredClients = (): Client[] => {
+  if (!searchQuery.value) return clients.value
   const q = searchQuery.value.toLowerCase()
-  return partners.value.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) || p.cpfCnpj.includes(q) || p.email.toLowerCase().includes(q)
+  return clients.value.filter(
+    (c) =>
+      c.name.toLowerCase().includes(q) || c.cpfCnpj.includes(q) || c.email.toLowerCase().includes(q)
   )
+}
+
+const goToOnboarding = (): void => {
+  router.push('/dashboard')
 }
 </script>
 
@@ -187,17 +219,17 @@ const filteredPartners = (): Partner[] => {
 
         <router-link
           to="/dashboard/partners"
-          class="flex items-center gap-4 px-5 py-3 rounded-xl bg-[#1b1b28] text-white transition-all group"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
         >
-          <Users :size="20" class="text-[var(--cca-blue)]" />
+          <Users :size="20" class="opacity-50 group-hover:opacity-100" />
           <span class="text-[13px] font-bold">Parceiros</span>
         </router-link>
 
         <router-link
           to="/dashboard/clients"
-          class="flex items-center gap-4 px-5 py-3 rounded-xl text-[var(--metronic-sidebar-text)] hover:bg-[#1b1b28] hover:text-white transition-all group"
+          class="flex items-center gap-4 px-5 py-3 rounded-xl bg-[#1b1b28] text-white transition-all group"
         >
-          <Building2 :size="20" class="opacity-50 group-hover:opacity-100" />
+          <Building2 :size="20" class="text-[var(--cca-blue)]" />
           <span class="text-[13px] font-bold">Clientes</span>
         </router-link>
 
@@ -284,18 +316,46 @@ const filteredPartners = (): Partner[] => {
         </div>
       </transition>
 
+      <!-- API Key Warning Banner -->
+      <div
+        v-if="!hasApiKey"
+        class="mx-10 mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-start gap-4"
+      >
+        <div
+          class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0"
+        >
+          <Key :size="24" />
+        </div>
+        <div class="flex-1">
+          <h4 class="text-base font-black text-amber-800 mb-1">
+            Chave API do Asaas não configurada
+          </h4>
+          <p class="text-sm text-amber-600 font-medium leading-relaxed">
+            Para cadastrar clientes, é necessário configurar sua Chave de API do Asaas. Acesse o
+            <strong>Guia de Início</strong> no painel para configurar.
+          </p>
+          <button
+            class="mt-4 bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+            @click="goToOnboarding"
+          >
+            <HelpCircle :size="14" />
+            Ir para Configuração
+          </button>
+        </div>
+      </div>
+
       <!-- Toolbar -->
       <header
         class="h-[100px] bg-white px-10 flex items-center justify-between shrink-0 border-b border-slate-100"
       >
         <div class="flex flex-col">
           <div class="flex items-center gap-2 mb-1.5">
-            <Users :size="14" class="text-slate-300" />
+            <Building2 :size="14" class="text-slate-300" />
             <span class="text-slate-300 text-xs font-bold">/</span>
-            <span class="text-[#1e1e2d] text-xs font-bold">Gestão de Parceiros</span>
+            <span class="text-[#1e1e2d] text-xs font-bold">Gestão de Clientes</span>
           </div>
           <h2 class="text-[26px] font-black text-[#1e1e2d] tracking-tight leading-none">
-            Parceiros & Colaboradores
+            Clientes & Cobranças
           </h2>
         </div>
 
@@ -305,16 +365,17 @@ const filteredPartners = (): Partner[] => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Buscar parceiro..."
+              placeholder="Buscar cliente..."
               class="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-6 py-3.5 text-sm font-bold focus:outline-none focus:border-[var(--cca-blue)] focus:ring-4 focus:ring-blue-500/5 transition-all w-64"
             />
           </div>
           <button
-            class="bg-[#009ef7] hover:bg-[#008be0] text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
+            class="bg-[#009ef7] hover:bg-[#008be0] text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#009ef7]"
+            :disabled="!hasApiKey"
             @click="openAddModal"
           >
             <Plus :size="18" />
-            Novo Parceiro
+            Novo Cliente
           </button>
         </div>
       </header>
@@ -322,52 +383,68 @@ const filteredPartners = (): Partner[] => {
       <!-- Content Body -->
       <div class="flex-1 p-10 overflow-auto">
         <div
-          v-if="partners.length === 0 && !isLoading"
+          v-if="clients.length === 0 && !isLoading"
           class="h-full flex flex-col items-center justify-center text-center space-y-6"
         >
           <div
             class="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200"
           >
-            <Users :size="48" />
+            <Building2 :size="48" />
           </div>
           <div>
-            <h3 class="text-xl font-black text-slate-800">Nenhum parceiro encontrado</h3>
+            <h3 class="text-xl font-black text-slate-800">Nenhum cliente encontrado</h3>
             <p class="text-slate-400 font-medium max-w-sm mx-auto">
-              Comece cadastrando os colaboradores que receberão o split automático.
+              Comece cadastrando os clientes que receberão suas cobranças.
             </p>
           </div>
           <button
+            v-if="hasApiKey"
             class="text-[var(--cca-blue)] font-black text-sm uppercase tracking-widest hover:underline"
             @click="openAddModal"
           >
-            Cadastrar meu primeiro parceiro
+            Cadastrar meu primeiro cliente
           </button>
         </div>
 
         <div v-else class="space-y-6">
-          <!-- Partners Grid -->
+          <!-- Clients Grid -->
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div
-              v-for="partner in filteredPartners()"
-              :key="partner._id"
+              v-for="client in filteredClients()"
+              :key="client._id"
               class="bg-white p-8 rounded-[30px] shadow-[var(--metronic-shadow)] border border-slate-50 flex items-center gap-6 group hover:border-[var(--cca-blue)] transition-all"
             >
               <div
-                class="w-16 h-16 rounded-2xl bg-[var(--cca-blue-soft)] flex items-center justify-center text-[var(--cca-blue)] shrink-0"
+                class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"
               >
-                <span class="text-2xl font-black">{{ partner.name.charAt(0) }}</span>
+                <span class="text-2xl font-black">{{ client.name.charAt(0) }}</span>
               </div>
 
               <div class="flex-1 min-w-0">
-                <h4 class="text-lg font-black text-slate-800 truncate">{{ partner.name }}</h4>
+                <div class="flex items-center gap-2">
+                  <h4 class="text-lg font-black text-slate-800 truncate">{{ client.name }}</h4>
+                  <div
+                    v-if="client.asaasCustomerId"
+                    class="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest shrink-0"
+                  >
+                    Asaas ✓
+                  </div>
+                </div>
                 <div
                   class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-slate-400 text-xs font-bold uppercase tracking-widest mt-1"
                 >
-                  <span class="flex items-center gap-1.5"
-                    ><CreditCard :size="12" /> {{ partner.cpfCnpj }}</span
-                  >
+                  <span class="flex items-center gap-1.5">
+                    <Building2 :size="12" /> {{ client.cpfCnpj }}
+                  </span>
                   <span class="hidden sm:block w-1 h-1 bg-slate-200 rounded-full"></span>
-                  <span class="truncate">{{ partner.email }}</span>
+                  <span class="truncate">{{ client.email }}</span>
+                </div>
+                <div
+                  v-if="client.address"
+                  class="flex items-center gap-1.5 text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-1.5"
+                >
+                  <MapPin :size="10" />
+                  {{ client.address.city }}/{{ client.address.state }}
                 </div>
               </div>
 
@@ -376,13 +453,13 @@ const filteredPartners = (): Partner[] => {
               >
                 <button
                   class="p-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                  @click="openEditModal(partner)"
+                  @click="openEditModal(client)"
                 >
                   <Pencil :size="18" />
                 </button>
                 <button
                   class="p-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all"
-                  @click="handleDeletePartner(partner)"
+                  @click="handleDeleteClient(client)"
                 >
                   <Trash2 :size="18" />
                 </button>
@@ -393,11 +470,12 @@ const filteredPartners = (): Partner[] => {
       </div>
     </main>
 
-    <PartnerModal
+    <ClientModal
       :show="showModal"
-      :partner="selectedPartner"
+      :client="selectedClient"
+      :api-key="config?.asaasApiKey || ''"
       @close="showModal = false"
-      @save="handleSavePartner"
+      @save="handleSaveClient"
     />
   </div>
 </template>
